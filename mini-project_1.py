@@ -30,7 +30,11 @@ class Net(nn.Module):
         x = self.fc2(x)
         return x
 
-    def predict(self, x):
+    def predict(self,x):
+        pred = torch.tensor([self.compare_pair(i) for i in x])
+        return pred
+
+    def compare_pair(self, x):
         a = x[0]
         b = x[1]
         val_a = self.forward(a.view(1,1,14,14)).max(1)[1].item()
@@ -84,7 +88,27 @@ class Net2(nn.Module):
     def predict(self, x):
         return torch.sigmoid(self.forward(x)).round()
 
-def train_model(model, optimizer, nb_epochs, train_input, train_target, mini_batch_size):
+
+
+def train_model_vanilla(model, optimizer, nb_epochs, train_input, train_target ,mini_batch_size):
+    
+    start = time.time()
+    for e in range(0, nb_epochs):
+        # We do this with mini-batches
+        for b in range(0, train_input.size(0), mini_batch_size):
+            output = model(train_input.narrow(0, b, mini_batch_size))
+            target = train_target.narrow(0, b, mini_batch_size)
+            loss = model.criterion(output,target.max(1)[1])
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            
+    end = time.time()
+
+    return end-start
+    
+
+def train_model(model, optimizer, nb_epochs, train_input, train_target ,mini_batch_size):
 
     start = time.time()
     for e in range(0,nb_epochs):
@@ -128,8 +152,9 @@ if __name__ == '__main__':
     train_input.sub_(mean).div_(std)
     test_input.sub_(mean).div_(std)
 
-    train_input_1, train_target_1 = prepare_vanilla(train_input, train_classes)
-    train_input_1, train_target_1 = Variable(train_input_1), Variable(train_target_1)
+    train_input_vanilla, train_target_vanilla = prepare_vanilla(train_input, train_classes)
+    train_input_vanilla, train_target_vanilla = Variable(train_input_vanilla), Variable(train_target_vanilla)
+    
     train_input, train_target = Variable(train_input), Variable(train_target)
     test_input, test_target = Variable(test_input), Variable(test_target)
 
@@ -138,7 +163,7 @@ if __name__ == '__main__':
     # check different configurations
     NB_EPOCHS = 25
     MINI_BATCH_SIZE = 100
-    models = [Net]
+    models = [Net, Net1]
     optimizers = [optim.SGD, optim.Adam]
     learning_rates = [1e-1, 1e-2, 1e-3]
 
@@ -146,23 +171,26 @@ if __name__ == '__main__':
 
         model = m()
             
-        if(model.__class__.__name__ == 'Net'):
-            train_input = train_input_1
-            train_target = train_target_1
+
+
             
         train_target, test_target = update_target_type(model, train_target, test_target)
 
-            
+        
 
         for optimizer in optimizers:
             for learning_rate in learning_rates:
                 
-                training_time = train_model(model, optimizer(model.parameters(), lr=learning_rate), NB_EPOCHS, \
-                        train_input, train_target, MINI_BATCH_SIZE)
+                
 
-                
-                
-                print('model: {:>5}, criterion: {:>10}, optimizer: {:>10}, learning rate: {:6}, num epochs: {:3}, '
+
+
+                if(model.__class__.__name__ == 'Net'):
+                    training_time = train_model_vanilla(model, optimizer(model.parameters(), lr=learning_rate), NB_EPOCHS, \
+                        train_input_vanilla, train_target_vanilla, MINI_BATCH_SIZE)
+
+                    
+                    print('model: {:>5}, criterion: {:>10}, optimizer: {:>10}, learning rate: {:6}, num epochs: {:3}, '
                         'mini batch size: {:3}, training time: {:5.2f}, train error: {:5.2f}%, test error: {:5.2f}%'.format(
                         model.__class__.__name__,
                         model.criterion.__class__.__name__,
@@ -172,6 +200,25 @@ if __name__ == '__main__':
                         MINI_BATCH_SIZE,
                         training_time,
                         compute_nb_errors(model, train_input, train_target, MINI_BATCH_SIZE) / train_input.size(0) * 100,
+                        compute_nb_errors(model, test_input, test_target, MINI_BATCH_SIZE) / test_input.size(0) * 100
+                        )
+                )
+                    
+            
+                else:
+                    training_time = train_model(model, optimizer(model.parameters(), lr=learning_rate), NB_EPOCHS, \
+                        train_input, train_target, MINI_BATCH_SIZE)
+                    print('model: {:>5}, criterion: {:>10}, optimizer: {:>10}, learning rate: {:6}, num epochs: {:3}, '
+                        'mini batch size: {:3}, training time: {:5.2f}, train error: {:5.2f}%, test error: {:5.2f}%'.format(
+                        model.__class__.__name__,
+                        model.criterion.__class__.__name__,
+                        optimizer.__name__,
+                        learning_rate,
+                        NB_EPOCHS,
+                        MINI_BATCH_SIZE,
+                        training_time,
+                        #compute_nb_errors(model, train_input, train_target, MINI_BATCH_SIZE) / train_input.size(0) * 100,
+                        training_time,
                         compute_nb_errors(model, test_input, test_target, MINI_BATCH_SIZE) / test_input.size(0) * 100
                         )
                 )
