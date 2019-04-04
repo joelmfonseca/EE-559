@@ -148,7 +148,6 @@ class NetSharing2(nn.Module):
     def predict(self, x):
         return torch.sigmoid(self.forward(x)).round()
 
-
 class NetSharing3(nn.Module):
     def __init__(self, nb_hidden=100):
         super(NetSharing3, self).__init__()
@@ -180,7 +179,55 @@ class NetSharing3(nn.Module):
 
     def predict(self, x):
         return torch.max(self.forward(x), 1)[1]
+
+class NetAuxiliary1(nn.Module):
+    def __init__(self, nb_hidden=100):
+        super(NetAuxiliary1, self).__init__()
+        self.conv1 = nn.Conv2d(2, 32, kernel_size=3)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3)
+        self.fc1 = nn.Linear(256, nb_hidden)
+        self.fc2 = nn.Linear(nb_hidden, 10)
+        self.fc3 = nn.Linear(10, 2)
+
+        self.criterion = nn.CrossEntropyLoss()
+        self.target_type = torch.LongTensor
+
+    def forward(self, x):
+        x = F.relu(F.max_pool2d(self.conv1(x), kernel_size=2, stride=2))
+        x = F.relu(F.max_pool2d(self.conv2(x), kernel_size=2, stride=2))
+        x = F.relu(self.fc1(x.view(-1, 256)))
+        x = self.fc2(x)
+        y = self.fc3(x)
+        return x, y
+
+    def predict(self, x):
+        return torch.max(self.forward(x)[1], 1)[1]
     
+def train_model_auxiliary(model, optimizer, nb_epochs, train_input, train_target_bin,
+                            train_target_class, mini_batch_size):
+
+    start = time.time()
+    for e in range(0,nb_epochs):
+        for b in range(0, train_input.size(0), mini_batch_size):
+            output_class, output_bin = model(train_input.narrow(0, b, mini_batch_size))
+
+            target_bin = train_target_bin.narrow(0, b, mini_batch_size)
+            target_class = train_target_class.narrow(0, b, mini_batch_size)
+
+            loss_bin = model.criterion(output_bin, target_bin)
+            loss_class = model.criterion(output_class, target_class)
+
+            loss = loss_bin + 0.1*loss_class
+
+            model.zero_grad()
+            loss.backward()
+            optimizer.step()
+    end = time.time()
+
+    training_time = end-start
+
+    return training_time
+
 def train_model(model, optimizer, nb_epochs, train_input, train_target ,mini_batch_size):
 
     start = time.time()
@@ -237,8 +284,8 @@ if __name__ == '__main__':
     # test different configurations
     NB_EPOCHS = 25
     MINI_BATCH_SIZE = 100
-    models = [Net1, Net2, Net3, NetSharing1, NetSharing2]
-    #models = [NetSharing3]
+    # models = [Net1, Net2, Net3, NetSharing1, NetSharing2]
+    models = [NetAuxiliary1]
     optimizers = [optim.SGD, optim.Adam]
     learning_rates = [1e-1, 1e-2, 1e-3]
 
@@ -253,11 +300,16 @@ if __name__ == '__main__':
                 if model.__class__.__name__ == 'Net3':
                     training_time = train_model(model, optimizer(model.parameters(), lr=learning_rate), NB_EPOCHS, \
                         train_input_Net3, train_target_Net3, MINI_BATCH_SIZE)
+                
+                elif 'Auxiliary' in model.__class__.__name__:
+                    training_time = train_model_auxiliary(model, optimizer(model.parameters(), lr=learning_rate), NB_EPOCHS, \
+                        train_input, train_target, train_target_Net3, MINI_BATCH_SIZE)
+                
                 else:
                     training_time = train_model(model, optimizer(model.parameters(), lr=learning_rate), NB_EPOCHS, \
                         train_input, train_target, MINI_BATCH_SIZE)
 
-                print('model: {:>5}, criterion: {:>10}, optimizer: {:>10}, learning rate: {:6}, num epochs: {:3}, '
+                print('model: {:>13}, criterion: {:>10}, optimizer: {:>10}, learning rate: {:6}, num epochs: {:3}, '
                     'mini batch size: {:3}, training time: {:5.2f}, train error: {:5.2f}%, test error: {:5.2f}%'.format(
                     model.__class__.__name__,
                     model.criterion.__class__.__name__,
