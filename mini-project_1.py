@@ -11,9 +11,14 @@ from torch.autograd import Variable
 from torch.nn import functional as F
 from utils import *
 
-class MergeImages(nn.Module):
+class Net1(nn.Module):
     '''
+    Input: An image of size 2 x 14 x 14
     
+    Output: Two binary units indicating the image
+            representing the larger number
+
+    Loss: Cross-Entropy
     '''
     def __init__(self, nb_hidden=100):
         super(Net1, self).__init__()
@@ -36,6 +41,14 @@ class MergeImages(nn.Module):
         return torch.max(self.forward(x), 1)[1]
 
 class Net2(nn.Module):
+    '''
+    Input: An image of size 2 x 14 x 14
+
+    Output: One binary unit indicating the image
+            representing the larger number
+
+    Loss: Binarary Cross-Entropy with Logit
+    '''
     def __init__(self, nb_hidden=100):
         super(Net2, self).__init__()
         self.conv1 = nn.Conv2d(2, 32, kernel_size=3)
@@ -57,6 +70,13 @@ class Net2(nn.Module):
         return torch.sigmoid(self.forward(x)).round()
 
 class Net3(nn.Module):
+    '''
+    Input: An image of size 1 x 14 x 14
+
+    Output: The digit represented on the image
+
+    Loss: Cross-Entropy
+    '''
     def __init__(self,nb_hidden = 100):
         super(Net3, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
@@ -92,6 +112,14 @@ class Net3(nn.Module):
         return pred
 
 class WeightSharing(nn.Module):
+    ''' 
+    Input: An image of size 2 x 14 x 14
+
+    Output: Two binary units indicating the image
+            with the larger number
+
+    Loss: Binary Cross-Entropy with Logit
+    '''
     def __init__(self, nb_hidden=100):
         super(WeightSharing, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
