@@ -197,7 +197,7 @@ class NetAuxiliary1(nn.Module):
         x = F.relu(F.max_pool2d(self.conv2(x), kernel_size=2, stride=2))
         x = F.relu(self.fc1(x.view(-1, 256)))
         x = self.fc2(x)
-        y = self.fc3(x)
+        y = self.fc3(F.relu(x))
         return x, y
 
     def predict(self, x):
@@ -230,7 +230,7 @@ class NetAuxiliary3(nn.Module):
     def __init__(self, nb_hidden=100):
         super(NetAuxiliary3, self).__init__()
         self.conv1 = nn.Conv2d(2, 32, kernel_size=3)
-        self.fc1 = nn.Sequential(nn.Linear(1152, 500), nn.Linear(500, 100), nn.Linear(100, 10))
+        self.fc1 = nn.Sequential(nn.Linear(1152, 500), nn.ReLU, nn.Linear(500, 100), nn.ReLU, nn.Linear(100, 10))
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3)
         self.fc2 = nn.Linear(256, nb_hidden)
         self.fc3 = nn.Linear(nb_hidden, 2)
