@@ -99,3 +99,26 @@ class MSELoss(Module):
 
     def backward(self):
         return 2 * (self.input - self.target)
+
+def gen_disc_set(num_samples=1000):
+    input = torch.Tensor(num_samples, 2).uniform_(0,1)
+    target = input.pow(2).sum(1).sub(1 / (2*math.pi)).sign().sub(1).div(-2).long()
+    return input, target
+
+def plot_dataset(input, target):
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(1, 1, figsize=(5,5))
+    input = input.numpy()
+    target = target.numpy()
+    in_ = [tuple(t) for t, b in zip(input, target) if b == 1]
+    out_ = [tuple(t) for t, b in zip(input, target) if b == 0]
+
+    ax.scatter(dict(in_).keys(), dict(in_).values(), c='r', label='inside')
+    ax.scatter(dict(out_).keys(), dict(out_).values(), c='b', label='outside')
+    plt.legend(framealpha=1)
+    plt.show()
+
+if __name__ == '__main__':
+
+    input, target = gen_disc_set()
+    plot_dataset(input, target)
