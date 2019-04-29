@@ -30,10 +30,12 @@ class Linear(Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        stdv = 1. / math.sqrt(self.weight.size(1))
-        self.weight.uniform_(-stdv, stdv)
+        # std = 1. / math.sqrt(self.weight.size(1))
+        # self.weight.uniform_(-std, std)
+        self.weight.normal_(0, 1)
         if self.bias is not None:
-            self.bias.uniform_(-stdv, stdv)
+            # self.bias.uniform_(-std, std)
+            self.bias.normal_(0, 1)
 
     def forward(self, input):
         self.input = input
@@ -43,11 +45,11 @@ class Linear(Module):
         return output
 
     def backward(self, grad_output):
-        self.grad_input = grad_output.matmul(self.weight)
         self.grad_weight.add_(grad_output.t().matmul(self.input))
         if self.bias is not None:
-            self.grad_bias.add_(grad_output.sum(0).squeeze(0))
-        return self.grad_input
+            # print(self.grad_bias.size(), grad_output.size())
+            self.grad_bias.add_(grad_output.sum(0))
+        return grad_output.matmul(self.weight)
 
     def param(self):
         list_param = [(self.weight, self.grad_weight)]
@@ -69,13 +71,19 @@ class Sequential(Module):
         grad = grad_output
         for module in reversed(self.modules):
             grad = module.backward(grad)
-        return grad
 
     def param(self):
         res = []
         for module in self.modules:
             res.extend(module.param())
         return res
+
+    def print_param(self):
+        param = self.param()
+        for p, grad in param:
+            print('param: ', p)
+            print('grad: ', grad)
+            print('--')
 
 class Tanh(Module):
 
@@ -100,7 +108,7 @@ class MSELoss(Module):
     def forward(self, input, target):
         self.input = input
         self.target = target
-        return torch.sum((input - target) ** 2)
+        return (input - target).pow(2).sum()
 
     def backward(self):
         return 2 * (self.input - self.target)
@@ -119,13 +127,10 @@ class SGD(Optimizer):
     def step(self):
         for p, grad in self.param:
             if grad is not None:
-                p.sub_(self.lr*grad)
-
-        for _, grad in self.param:
-            if grad is not None:
+                p.add_(-self.lr*grad)
                 grad.zero_()
 
-def gen_disc_set(num_samples=1000):
+def gen_disc_set(num_samples=50):
     input = torch.Tensor(num_samples, 2).uniform_(0,1)
     target = input.sub_(0.5).pow(2).sum(1).sub(1 / (2*math.pi)).sign().sub(1).div(-2).long()
     return input, target
@@ -156,34 +161,40 @@ def compute_nb_errors(model, data_input, data_target, mini_batch_size):
     return nb_data_errors
 
 def train_model(model, optimizer, lr, criterion, nb_epochs, train_input, train_target, mini_batch_size):
-    for e in range(0, nb_epochs):
+    for i, epoch in enumerate(range(0, nb_epochs)):
         for b in range(0, train_input.size(0), mini_batch_size):
 
-            # print(model.modules[0].weight[:5])
             output = model.forward(train_input.narrow(0, b, mini_batch_size))
             target = train_target.narrow(0, b, mini_batch_size)
-
+            print(output, target)
             loss = criterion.forward(output, target)
             grad_output = criterion.backward()
-            # print(model.modules[0].weight[:5])
-            # print(model.modules[0].grad_weight[:5])
+            print('grad_output=', grad_output)
+            print('***before backward***')
+            model.print_param()
             model.backward(grad_output)
+            print('---after backward---')
+            model.print_param()
             optimizer.step()
-            # break
-        # print(model.modules[0].weight[:5])
-        # print(model.modules[0].grad_weight[:5])
 
-        print('criterion: {:>8}, optimizer: {:>5}, learning rate: {:6}, num epochs: {:3}, '
-                    'mini batch size: {:3}, train error: {:5.2f}%, test error: {:5.2f}%'.format(
-                    criterion.__class__.__name__,
-                    optimizer.__class__.__name__,
-                    lr,
-                    e,
-                    mini_batch_size,
-                    compute_nb_errors(model, train_input, train_target, mini_batch_size) / train_input.size(0) * 100,
-                    compute_nb_errors(model, test_input, test_target, mini_batch_size) / test_input.size(0) * 100
-                    )
-        )
+
+            
+        # print('--')
+        # print('Weight first module:', model.modules[0].weight[:5])
+        # print('Grad first module:', model.modules[0].grad_weight[:5])
+
+        # if i%0 == 0:
+            print('criterion: {:>8}, optimizer: {:>5}, learning rate: {:6}, num epochs: {:3}, '
+                        'mini batch size: {:3}, train error: {:5.2f}%, test error: {:5.2f}%'.format(
+                        criterion.__class__.__name__,
+                        optimizer.__class__.__name__,
+                        lr,
+                        epoch,
+                        mini_batch_size,
+                        compute_nb_errors(model, train_input, train_target, mini_batch_size) / train_input.size(0) * 100,
+                        compute_nb_errors(model, test_input, test_target, mini_batch_size) / test_input.size(0) * 100
+                        )
+            )
 
 if __name__ == '__main__':
 
@@ -200,20 +211,20 @@ if __name__ == '__main__':
     test_input.sub_(mean).div_(std)
 
     model = Sequential([
-        Linear(2, 25),
+        Linear(2, 5),
         Tanh(),
-        Linear(25, 25),
+        Linear(5, 5),
         Tanh(),
-        Linear(25, 25),
+        Linear(5, 5),
         Tanh(),
-        Linear(25, 2)]
+        Linear(5, 2)]
     )
 
-    lr = 0.0001
+    lr = 0.001
     optimizer = SGD(model.param(), lr=lr)
     criterion = MSELoss()
 
-    nb_epochs = 300
-    mini_batch_size = 100
+    nb_epochs = 1
+    mini_batch_size = 10
 
     train_model(model, optimizer, lr, criterion, nb_epochs, train_input, train_target, mini_batch_size)
