@@ -93,7 +93,7 @@ class ReLU(Module):
         return input.clamp(min=0)
 
     def backward(self, grad_output):
-        return grad_output * (self.input>0)
+        return grad_output * (self.input>0).float()
 
 class MSELoss(Module):
 
@@ -127,8 +127,8 @@ class SGD(Optimizer):
 
 def gen_disc_set(num_samples=1000):
     input = torch.Tensor(num_samples, 2).uniform_(0,1)
-    target = input.pow(2).sum(1).sub(1 / (2*math.pi)).sign().sub(1).div(-2).long()
-    return input, convert_to_one_hot_labels(input, target)
+    target = input.sub_(0.5).pow(2).sum(1).sub(1 / (2*math.pi)).sign().sub(1).div(-2).long()
+    return input, target
 
 def plot_dataset(input, target):
     import matplotlib.pyplot as plt
@@ -158,14 +158,20 @@ def compute_nb_errors(model, data_input, data_target, mini_batch_size):
 def train_model(model, optimizer, lr, criterion, nb_epochs, train_input, train_target, mini_batch_size):
     for e in range(0, nb_epochs):
         for b in range(0, train_input.size(0), mini_batch_size):
+
+            # print(model.modules[0].weight[:5])
             output = model.forward(train_input.narrow(0, b, mini_batch_size))
             target = train_target.narrow(0, b, mini_batch_size)
 
             loss = criterion.forward(output, target)
             grad_output = criterion.backward()
-            
+            # print(model.modules[0].weight[:5])
+            # print(model.modules[0].grad_weight[:5])
             model.backward(grad_output)
             optimizer.step()
+            # break
+        # print(model.modules[0].weight[:5])
+        # print(model.modules[0].grad_weight[:5])
 
         print('criterion: {:>8}, optimizer: {:>5}, learning rate: {:6}, num epochs: {:3}, '
                     'mini batch size: {:3}, train error: {:5.2f}%, test error: {:5.2f}%'.format(
@@ -183,8 +189,11 @@ if __name__ == '__main__':
 
     train_input, train_target = gen_disc_set()
     test_input, test_target = gen_disc_set()
-    #plot_dataset(train_input, train_target)
+    # plot_dataset(train_input, train_target)
 
+    train_target = convert_to_one_hot_labels(train_input, train_target)
+    test_target = convert_to_one_hot_labels(test_input, test_target)
+    
     mean, std = train_input.mean(), train_input.std()
 
     train_input.sub_(mean).div_(std)
@@ -200,7 +209,7 @@ if __name__ == '__main__':
         Linear(25, 2)]
     )
 
-    lr = 0.001
+    lr = 0.0001
     optimizer = SGD(model.param(), lr=lr)
     criterion = MSELoss()
 
