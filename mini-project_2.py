@@ -26,7 +26,7 @@ class Linear(Module):
             self.bias = torch.empty(out_features)
         else:
             self.bias = None
-        self.grad_input, self.grad_weight, self.grad_bias = None, None, None
+        self.grad_weight, self.grad_bias = torch.empty(self.weight.size()), torch.empty(self.bias.size())
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -44,9 +44,9 @@ class Linear(Module):
 
     def backward(self, grad_output):
         self.grad_input = grad_output.matmul(self.weight)
-        self.grad_weight = grad_output.t().matmul(self.input)
+        self.grad_weight.add_(grad_output.t().matmul(self.input))
         if self.bias is not None:
-            self.grad_bias = grad_output.sum(0).squeeze(0)
+            self.grad_bias.add_(grad_output.sum(0).squeeze(0))
         return self.grad_input
 
     def param(self):
@@ -149,7 +149,7 @@ def compute_nb_errors(model, data_input, data_target, mini_batch_size):
     for b in range(0, data_input.size(0), mini_batch_size):
         pred = model.forward(data_input.narrow(0, b, mini_batch_size))
         for k in range(mini_batch_size):
-            print(data_target.data[b + k], pred[k])
+            # print(data_target.data[b + k], pred[k])
             if torch.max(data_target.data[b + k], 0)[1] != torch.max(pred[k], 0)[1]:
                 nb_data_errors = nb_data_errors + 1
 
@@ -160,19 +160,19 @@ def train_model(model, optimizer, lr, criterion, nb_epochs, train_input, train_t
         for b in range(0, train_input.size(0), mini_batch_size):
             output = model.forward(train_input.narrow(0, b, mini_batch_size))
             target = train_target.narrow(0, b, mini_batch_size)
+
             loss = criterion.forward(output, target)
-            # loss.backward()
             grad_output = criterion.backward()
+            
             model.backward(grad_output)
-            # print(model.modules[0].grad_weight)
             optimizer.step()
-        
+
         print('criterion: {:>8}, optimizer: {:>5}, learning rate: {:6}, num epochs: {:3}, '
                     'mini batch size: {:3}, train error: {:5.2f}%, test error: {:5.2f}%'.format(
                     criterion.__class__.__name__,
                     optimizer.__class__.__name__,
                     lr,
-                    nb_epochs,
+                    e,
                     mini_batch_size,
                     compute_nb_errors(model, train_input, train_target, mini_batch_size) / train_input.size(0) * 100,
                     compute_nb_errors(model, test_input, test_target, mini_batch_size) / test_input.size(0) * 100
@@ -204,7 +204,7 @@ if __name__ == '__main__':
     optimizer = SGD(model.param(), lr=lr)
     criterion = MSELoss()
 
-    nb_epochs = 100
+    nb_epochs = 300
     mini_batch_size = 100
 
     train_model(model, optimizer, lr, criterion, nb_epochs, train_input, train_target, mini_batch_size)
