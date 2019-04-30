@@ -29,6 +29,8 @@ if __name__ == '__main__':
         Tanh(),
         Linear(25, 25),
         Tanh(),
+        Linear(25, 25),
+        Tanh(),
         Linear(25, 2)]
     )
 
@@ -37,5 +39,6 @@ if __name__ == '__main__':
     criterion = MSELoss()
 
     nb_epochs = 80
+    mini_batch_size = 10
 
-    train_model(model, optimizer, lr, criterion, nb_epochs, train_input, train_target, test_input, test_target)
+    train_model(model, optimizer, lr, criterion, nb_epochs, train_input, train_target, test_input, test_target, mini_batch_size)

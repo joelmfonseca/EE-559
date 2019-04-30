@@ -46,16 +46,24 @@ class Linear(Module):
 
     def forward(self, input):
         self.input = input
-        output = self.weight.matmul(input)
+        output = input.matmul(self.weight.t())
         if self.bias is not None:
             output = output + self.bias
         return output
 
     def backward(self, grad_output):
-        self.grad_input = self.weight.t().matmul(grad_output)
-        self.grad_weight.add_(grad_output.view(-1,1).matmul(self.input.view(1,-1)))
+        self.grad_input = grad_output.matmul(self.weight)
+
+        # print('grad_output: ', grad_output.size())
+        # print('input: ', self.input.size())
+        # print('weight: ', self.weight.size())
+        # print('grad_weight: ', self.grad_weight.size())
+        # print('bias: ', self.bias.size())
+        # print('grad_bias: ', self.grad_bias.size())
+
+        self.grad_weight.add_(grad_output.t().matmul(self.input))
         if self.bias is not None:
-            self.grad_bias.add_(grad_output)
+            self.grad_bias.add_(grad_output.sum(0))
         return self.grad_input
 
     def param(self):

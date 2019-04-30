@@ -19,23 +19,24 @@ def plot_dataset(input, target):
     plt.legend(framealpha=1)
     plt.show()
 
-def compute_nb_errors(model, data_input, data_target):
+def compute_nb_errors(model, data_input, data_target, mini_batch_size):
     nb_data_errors = 0
-    for i in range(data_input.size(0)):
-        pred = model.forward(data_input[i])
-        if torch.max(data_target[i], 0)[1] != torch.max(pred, 0)[1]:
-            nb_data_errors = nb_data_errors + 1
-
+    for b in range(0, data_input.size(0), mini_batch_size):
+        pred = model.forward(data_input.narrow(0, b, mini_batch_size))
+        for k in range(mini_batch_size):
+            # print(data_target.data[b + k], pred[k])
+            if torch.max(data_target.data[b + k], 0)[1] != torch.max(pred[k], 0)[1]:
+                nb_data_errors = nb_data_errors + 1
     return nb_data_errors
 
-def train_model(model, optimizer, lr, criterion, nb_epochs, train_input, train_target, test_input, test_target):
+def train_model(model, optimizer, lr, criterion, nb_epochs, train_input, train_target, test_input, test_target, mini_batch_size):
     for epoch in range(nb_epochs):
         acc_loss = 0
         # if epoch==0:
         #     model.print_param()
-        for i in range(train_input.size(0)):
-            output = model.forward(train_input[i])
-            target = train_target[i]
+        for b in range(0, train_input.size(0), mini_batch_size):
+            output = model.forward(train_input.narrow(0, b, mini_batch_size))
+            target = train_target.narrow(0, b, mini_batch_size)
             loss = criterion.forward(output, target)
             acc_loss += loss
             grad_output = criterion.backward()
@@ -48,7 +49,7 @@ def train_model(model, optimizer, lr, criterion, nb_epochs, train_input, train_t
         print('epoch: {:3}, loss: {:.7f}, train error: {:5.2f}%, test error: {:5.2f}%'.format(
                     epoch,
                     acc_loss/train_input.size(0),
-                    compute_nb_errors(model, train_input, train_target) / train_input.size(0) * 100,
-                    compute_nb_errors(model, test_input, test_target) / test_input.size(0) * 100
+                    compute_nb_errors(model, train_input, train_target, mini_batch_size) / train_input.size(0) * 100,
+                    compute_nb_errors(model, test_input, test_target, mini_batch_size) / test_input.size(0) * 100
                     )
         )
