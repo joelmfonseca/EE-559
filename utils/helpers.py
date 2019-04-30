@@ -7,13 +7,13 @@ from utils.objects import History
 from utils.metrics import compute_accuracy
 from utils.data import batch_iter, split_data
 
-def h_mean(histories, epochs):
+def h_mean(histories):
     m_history = History()
     m_history.mean = True
     n = len(histories)
     
     for metric in histories[0].history:
-        acc = torch.Tensor([0]*epochs)
+        acc = torch.Tensor([0]*histories[0].epochs)
         for h in histories:
             acc += torch.Tensor(h.history[metric])
         m_history.history[metric] = acc / n
@@ -87,6 +87,7 @@ def train_model(model, optimizer, n_epochs, tx, y, batch_size):
         update_history(history, model, tx, y, e_loss, batch_size)    
     end = time.time()
     history.training_time = end-start
+    history.epochs = n_epochs
         
     return history
 

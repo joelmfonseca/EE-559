@@ -13,7 +13,7 @@ def prepare_standardplot(title, xlabel, epochs, stats):
     
     ax1.set_ylabel('BCEWithLogitsLoss')
     ax1.set_xlabel(xlabel)    
-    ax1.set_yscale('log')
+    #ax1.set_yscale('log')
     loss_min = min(stats['loss']['min'], stats['val_loss']['min'])
     loss_max = max(stats['loss']['max'], stats['val_loss']['max'])
     offset = (loss_max-loss_min)*.1
@@ -39,8 +39,8 @@ def finalize_standardplot(fig, ax1, ax2):
     fig.tight_layout()
     plt.subplots_adjust(top=0.9)
 
-def plot_history(history, title, epochs):
-    fig, ax1, ax2 = prepare_standardplot(title, 'epoch', epochs, h_stats([history]))
+def plot_history(history, title):
+    fig, ax1, ax2 = prepare_standardplot(title, 'epoch', history.epochs, h_stats([history]))
     ax1.plot(history.history['loss'].tolist(), label = "training")
     ax1.plot(history.history['val_loss'].tolist(), label = "validation")
     ax2.plot(history.history['acc'].tolist(), label = "training")
@@ -61,12 +61,13 @@ def comparison_plot(history_1, history_2, label1, label2, title):
     finalize_standardplot(fig, ax1, ax2)
     return fig
 
-def plot_histories(histories, xs, epochs, title):
-    fig, ax1, ax2 = prepare_standardplot(title, 'epoch', epochs, h_stats(histories))
+def plot_histories(histories, title):
+    fig, ax1, ax2 = prepare_standardplot(title, 'epoch', histories[0].epochs, h_stats(histories))
+    xs = torch.arange(0, epochs).tolist()
     alpha = 1/8
     # Lines
     loss, acc, val_loss, val_acc = [], [], [], []
-    for history in histories + [h_mean(histories, epochs)]:
+    for history in histories + [h_mean(histories)]:
         # Create lines
         a = list(zip(xs, history.history['loss'].tolist()))
         b = list(zip(xs, history.history['val_loss'].tolist()))

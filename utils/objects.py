@@ -4,10 +4,11 @@ import visdom
 
 class History():
     def __init__(self):
-        self.training_time = -1
+        self.training_time = None
         self.history = {'val_loss': torch.Tensor([]), 'val_acc': torch.Tensor([]), 
                         'loss': torch.Tensor([]), 'acc': torch.Tensor([])}
         self.mean = False
+        self.epochs = None
         
     def __stat__(self):
         stat = {'val_loss': {}, 'val_acc': {}, 'loss': {}, 'acc': {}}
