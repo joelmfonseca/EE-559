@@ -4,7 +4,7 @@ import time
 import torch
 
 from utils.objects import History
-from utils.metrics import compute_accuracy
+from utils.metrics import compute_accuracy, compute_nb_errors
 from utils.data import batch_iter, split_data
 
 def h_mean(histories):
@@ -34,27 +34,32 @@ def h_stats(histories):
 
     return stats
 
-def update_history(history, model, tx, y, train_loss, mini_batch_size):
+def update_history(history, model, tx, y, mini_batch_size):
     # Split data between training and validation
     (x_train, y_train), (x_test, y_test) = split_data(y, tx)
     # Evalutation mode
     model.eval()
         
     # Training
-    yHat_train = model.predict(x_train)
-    train_acc = compute_accuracy(yHat_train, y_train, mini_batch_size)
+    yHat_train = model(x_train)
+    train_loss = torch.Tensor([model.criterion(yHat_train, y_train).item()])
+    #train_acc = compute_accuracy(yHat_train, y_train, mini_batch_size)
+    train_acc = torch.Tensor([1 - compute_nb_errors(model, x_train, y_train, mini_batch_size) / x_train.size(0)])
+    
     history.history['acc'] = torch.cat((history.history['acc'], train_acc), 0)
     history.history['loss'] = torch.cat((history.history['loss'], train_loss), 0)
         
     # Validation
     yHat_test = model(x_test)
-    test_loss = torch.Tensor([model.criterion(yHat_test, y_test).item()])
-    yHat_test = model.predict(x_test)
     #print(yHat_test.shape, y_test.shape)
     #print(yHat_test.narrow(0, 0, 10))
     #print(y_test.narrow(0, 0, 10))
     #sys.exit()
-    test_acc = compute_accuracy(yHat_test, y_test, mini_batch_size)
+        
+    test_loss = torch.Tensor([model.criterion(yHat_test, y_test).item()])
+    yHat_test = model.predict(x_test)
+    #test_acc = compute_accuracy(yHat_test, y_test, mini_batch_size)
+    test_acc = torch.Tensor([1 - compute_nb_errors(model, x_test, y_test, mini_batch_size) / x_test.size(0)])
     history.history['val_acc'] = torch.cat((history.history['val_acc'], test_acc), 0)
     history.history['val_loss'] = torch.cat((history.history['val_loss'], test_loss), 0)
     
@@ -63,33 +68,34 @@ def update_history(history, model, tx, y, train_loss, mini_batch_size):
 # TODO: Argument for the way splitting is performed
 def train_model(model, optimizer, n_epochs, tx, y, batch_size):
     # Split data between training and validation
-    (train_input, train_target), (validation_input, validation_target) = split_data(y, tx)
+    (x_train, y_train), (x_test, y_test) = split_data(y, tx)
     # Get number of training examples
-    n_samples = train_input.size(0)
+    n_samples = x_train.size(0)
     # Save training history
     history = History()
     
     start = time.time()
     for e in range(0, n_epochs):
         model.train()
-        e_loss = torch.Tensor([.0])
+        #e_loss = torch.Tensor([.0])
         for b in range(0, n_samples, batch_size):
-            curr_train_input = train_input.narrow(0, b, batch_size)
-            curr_train_target = train_target.narrow(0, b, batch_size)
+            curr_x_train = x_train.narrow(0, b, batch_size)
+            curr_y_train = y_train.narrow(0, b, batch_size)
             
+            # Forward pass
+            pred = model(curr_x_train)
+            # Backward pass
+            loss = model.criterion(pred, curr_y_train)
             # zero the parameter gradients
             model.zero_grad()
-            # Forward pass
-            pred = model(curr_train_input)
-            # Backward pass
-            loss = model.criterion(pred, curr_train_target)
+     
             loss.backward()                        
             # Update weights
             optimizer.step()
             # Update loss
-            e_loss += loss.item()
+            #e_loss += loss.item()
         
-        update_history(history, model, tx, y, e_loss, batch_size)    
+        update_history(history, model, tx, y, batch_size)    
     end = time.time()
     
     history.training_time = end-start

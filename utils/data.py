@@ -51,7 +51,7 @@ def data_format(model, data):
     c_train, c_test = Variable(c_train), c_test
     # Format input
     if model.__class__.__name__ == 'Net3':
-        x_train, x_test = x_train.view(-1, 1, 14, 14), x_classes.flatten()
+        x_train, x_test = x_train.view(-1, 1, 14, 14), c_train.flatten()
     else:
         x_train, x_test = Variable(x_train), Variable(x_test)
     
