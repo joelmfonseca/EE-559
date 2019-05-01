@@ -45,8 +45,11 @@ class PReLU(Module):
         return input.clamp(min=0) + self.a*input.clamp(max=0)
 
     def backward(self, grad_output):
-        self.grad_a.add_((grad_output*self.input.clamp(min=0)).sum(0).mean(-1))
-        return grad_output * grad_output * (self.input.sign().clamp(min=0) - self.input.sign().clamp(max=0).mul_(self.a))
+        if self.num_parameters == 1:
+            self.grad_a.add_((grad_output*self.input.clamp(min=0)).sum())
+        else:
+            self.grad_a.add_((grad_output*self.input.clamp(min=0)).sum(0))
+        return grad_output * (self.input.sign().clamp(min=0) - self.input.sign().clamp(max=0).mul_(self.a))
 
     def param(self):
         return [(self.a, self.grad_a)]

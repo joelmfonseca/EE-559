@@ -24,17 +24,17 @@ if __name__ == '__main__':
 
     model = Sequential([
         Linear(2, 25),
-        ReLU(),
+        PReLU(),
         Linear(25, 25),
-        ReLU(),
+        PReLU(),
         Linear(25, 25),
-        ReLU(),
+        PReLU(),
         Linear(25, 25),
-        ReLU(),
+        PReLU(),
         Linear(25, 2)]
     )
 
-    lr = 0.01
+    lr = 0.001
     optimizer = SGD(model.param(), lr=lr)
     # criterion = CrossEntropyLoss()
     criterion = MSELoss()
