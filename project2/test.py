@@ -4,7 +4,7 @@ torch.set_grad_enabled(False)
 from module import Linear, Sequential
 from activation import Tanh, ReLU
 from optimizer import SGD
-from loss import MSELoss
+from loss import MSELoss, CrossEntropyLoss
 from loader import gen_disc_set
 from utils import convert_to_one_hot_labels, plot_dataset, train_model
 
@@ -14,6 +14,9 @@ if __name__ == '__main__':
     test_input, test_target = gen_disc_set()
     # plot_dataset(train_input, train_target)
     
+    train_target = convert_to_one_hot_labels(train_input, train_target)
+    test_target = convert_to_one_hot_labels(test_input, test_target)
+
     mean, std = train_input.mean(), train_input.std()
 
     train_input.sub_(mean).div_(std)
@@ -33,13 +36,11 @@ if __name__ == '__main__':
 
     lr = 0.01
     optimizer = SGD(model.param(), lr=lr)
-    criterion = MSELoss()
-
-    if criterion.__class__.__name__ == 'CrossEntropyLoss':
-        train_target = convert_to_one_hot_labels(train_input, train_target)
-        test_target = convert_to_one_hot_labels(test_input, test_target)
+    criterion = CrossEntropyLoss()
+    # criterion = MSELoss()
 
     nb_epochs = 80
     mini_batch_size = 10
 
-    train_model(model, optimizer, lr, criterion, nb_epochs, train_input, train_target, test_input, test_target, mini_batch_size)
+    train_model(model, optimizer, lr, criterion, nb_epochs,
+                train_input, train_target, test_input, test_target, mini_batch_size)

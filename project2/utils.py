@@ -29,7 +29,9 @@ def compute_nb_errors(model, data_input, data_target, mini_batch_size):
                 nb_data_errors = nb_data_errors + 1
     return nb_data_errors
 
-def train_model(model, optimizer, lr, criterion, nb_epochs, train_input, train_target, test_input, test_target, mini_batch_size):
+def train_model(model, optimizer, lr, criterion, nb_epochs,
+                train_input, train_target, test_input, test_target, mini_batch_size):
+
     for epoch in range(nb_epochs):
         acc_loss = 0
         # if epoch==0:
