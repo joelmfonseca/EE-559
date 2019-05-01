@@ -2,7 +2,7 @@ import torch
 torch.set_grad_enabled(False)
 
 from module import Linear, Sequential
-from activation import Tanh, ReLU
+from activation import Tanh, ReLU, LeakyReLU, PReLU
 from optimizer import SGD
 from loss import MSELoss, CrossEntropyLoss
 from loader import gen_disc_set
@@ -24,20 +24,20 @@ if __name__ == '__main__':
 
     model = Sequential([
         Linear(2, 25),
-        Tanh(),
+        ReLU(),
         Linear(25, 25),
-        Tanh(),
+        ReLU(),
         Linear(25, 25),
-        Tanh(),
+        ReLU(),
         Linear(25, 25),
-        Tanh(),
+        ReLU(),
         Linear(25, 2)]
     )
 
     lr = 0.01
     optimizer = SGD(model.param(), lr=lr)
-    criterion = CrossEntropyLoss()
-    # criterion = MSELoss()
+    # criterion = CrossEntropyLoss()
+    criterion = MSELoss()
 
     nb_epochs = 80
     mini_batch_size = 10
