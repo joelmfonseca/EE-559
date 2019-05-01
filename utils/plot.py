@@ -7,25 +7,25 @@ from matplotlib.collections import LineCollection
 from utils.helpers import h_stats, h_mean
 
 
-def prepare_standardplot(title, xlabel, epochs, stats):
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    fig.suptitle(title)
-    
-    ax1.set_ylabel('BCEWithLogitsLoss')
-    ax1.set_xlabel(xlabel)    
-    #ax1.set_yscale('log')
+def prepare_standardplot(title, xlabel, history):
+    stats = h_stats([history])
     loss_min = min(stats['loss']['min'], stats['val_loss']['min'])
     loss_max = max(stats['loss']['max'], stats['val_loss']['max'])
-    offset = (loss_max-loss_min)*.1
-    ax1.set_ylim(loss_min, loss_max+offset)
-    ax1.set_xlim(0, epochs)
-          
+    acc_min = min(stats['acc']['min'], stats['val_acc']['min'])
+    ax1_offset = (loss_max-loss_min)*.1
+    ax2_offset = (1-acc_min)*.1
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig.suptitle(title)    
+    ax1.set_ylabel(history.model['criterion'])
+    ax1.set_xlabel(xlabel)    
+    #ax1.set_yscale('log')
+    ax1.set_ylim(loss_min, loss_max+ax1_offset)
+    ax1.set_xlim(0, history.epochs)        
     ax2.set_ylabel('accuracy [% correct]')
     ax2.set_xlabel(xlabel)
-    acc_min = min(stats['acc']['min'], stats['val_acc']['min'])
-    offset = (1-acc_min)*.1
-    ax2.set_ylim(acc_min-offset, 1+offset)
-    ax2.set_xlim(0, epochs)
+    ax2.set_ylim(acc_min-ax2_offset, 1+ax2_offset)
+    ax2.set_xlim(0, history.epochs)
     
     return fig, ax1, ax2
 
@@ -40,7 +40,7 @@ def finalize_standardplot(fig, ax1, ax2):
     plt.subplots_adjust(top=0.9)
 
 def plot_history(history, title):
-    fig, ax1, ax2 = prepare_standardplot(title, 'epoch', history.epochs, h_stats([history]))
+    fig, ax1, ax2 = prepare_standardplot(title, 'epoch', history)
     ax1.plot(history.history['loss'].tolist(), label = "training")
     ax1.plot(history.history['val_loss'].tolist(), label = "validation")
     ax2.plot(history.history['acc'].tolist(), label = "training")

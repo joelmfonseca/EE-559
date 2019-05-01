@@ -4,20 +4,18 @@ import visdom
 
 class History():
     def __init__(self):
-        self.training_time = None
-        self.history = {'val_loss': torch.Tensor([]), 'val_acc': torch.Tensor([]), 
-                        'loss': torch.Tensor([]), 'acc': torch.Tensor([])}
-        self.mean = False
+        self.history = self.__default_history()
+        self.model = self.__default_model()
         self.epochs = None
+        self.training_time = None
+        self.mean = False
+     
+    def __default_history(self):
+        return {'val_loss': torch.Tensor([]), 'val_acc': torch.Tensor([]), 
+                'loss': torch.Tensor([]), 'acc': torch.Tensor([])}
+    def __default_model(self):
+        return {'name': None, 'optim': None, 'criterion': None}
         
-    def __stat__(self):
-        stat = {'val_loss': {}, 'val_acc': {}, 'loss': {}, 'acc': {}}
-        
-        for metric in self.history:
-            stat[metric]['min'] = self.history[metric].min()
-            stat[metric]['max'] = self.history[metric].max()
-
-        return stat
 
 class Visualization():
     def __init__(self, env_name=None):

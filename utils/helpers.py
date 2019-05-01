@@ -47,8 +47,13 @@ def update_history(history, model, tx, y, train_loss, mini_batch_size):
     history.history['loss'] = torch.cat((history.history['loss'], train_loss), 0)
         
     # Validation
-    yHat_test = model.predict(x_test)
+    yHat_test = model(x_test)
     test_loss = torch.Tensor([model.criterion(yHat_test, y_test).item()])
+    yHat_test = model.predict(x_test)
+    #print(yHat_test.shape, y_test.shape)
+    #print(yHat_test.narrow(0, 0, 10))
+    #print(y_test.narrow(0, 0, 10))
+    #sys.exit()
     test_acc = compute_accuracy(yHat_test, y_test, mini_batch_size)
     history.history['val_acc'] = torch.cat((history.history['val_acc'], test_acc), 0)
     history.history['val_loss'] = torch.cat((history.history['val_loss'], test_loss), 0)
@@ -86,12 +91,10 @@ def train_model(model, optimizer, n_epochs, tx, y, batch_size):
         
         update_history(history, model, tx, y, e_loss, batch_size)    
     end = time.time()
+    
     history.training_time = end-start
     history.epochs = n_epochs
-        
+    history.model['name'] = model.__class__.__name__
+    history.model['optim'] = optimizer
+    history.model['criterion'] = model.criterion.__class__.__name__
     return history
-
-
-def update_target_type(model, data_target, test_target):
-    type_ = model.target_type
-    return data_target.type(type_), test_target.type(type_)

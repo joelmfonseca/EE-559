@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import torch
+from torch.autograd import Variable
 
 def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
     """
@@ -37,3 +38,25 @@ def split_data(y, tx, ratio=0.2):
     
     cut = int(data_size*ratio)
     return (shuffled_tx[cut:], shuffled_y[cut:]), (shuffled_tx[:cut], shuffled_y[:cut])
+
+def data_format(model, data):
+    # Get standard data
+    (x_train, y_train, c_train), (x_test, y_test, c_test) = data
+    # Standardize input
+    mean, std = x_train.mean(), x_train.std()
+    x_train.sub_(mean).div_(std), x_test.sub_(mean).div_(std)
+    # Format output
+    y_train, y_test = y_train.type(model.target_type), y_test.type(model.target_type)
+    # Format classes
+    c_train, c_test = Variable(c_train), c_test
+    # Format input
+    if model.__class__.__name__ == 'Net3':
+        x_train, x_test = x_train.view(-1, 1, 14, 14), x_classes.flatten()
+    else:
+        x_train, x_test = Variable(x_train), Variable(x_test)
+    
+    return (x_train, y_train, c_train), (x_test, y_test, c_test)
+
+def update_target_type(model, y_train, y_test):
+    type_ = model.target_type
+    return y_train.type(type_), y_test.type(type_)
