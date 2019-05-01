@@ -6,21 +6,21 @@ from activation import Tanh, ReLU
 from optimizer import SGD
 from loss import MSELoss, CrossEntropyLoss
 from loader import gen_disc_set
-from utils import convert_to_one_hot_labels, plot_dataset, train_model
+from utils import plot_dataset, convert_to_one_hot_labels, standardise_input, train, test
 
 if __name__ == '__main__':
 
-    train_input, train_target = gen_disc_set()
+    validation_split = 0.2
+    train_input, train_target = gen_disc_set(1-validation_split)
+    valid_input, valid_target = gen_disc_set(validation_split)
     test_input, test_target = gen_disc_set()
     # plot_dataset(train_input, train_target)
-    
+
     train_target = convert_to_one_hot_labels(train_input, train_target)
+    valid_target = convert_to_one_hot_labels(valid_input, valid_target)
     test_target = convert_to_one_hot_labels(test_input, test_target)
 
-    mean, std = train_input.mean(), train_input.std()
-
-    train_input.sub_(mean).div_(std)
-    test_input.sub_(mean).div_(std)
+    standardise_input(train_input, valid_input, test_input)
 
     model = Sequential([
         Linear(2, 25),
@@ -42,5 +42,9 @@ if __name__ == '__main__':
     nb_epochs = 80
     mini_batch_size = 10
 
-    train_model(model, optimizer, lr, criterion, nb_epochs,
-                train_input, train_target, test_input, test_target, mini_batch_size)
+    best = train(model, optimizer, lr, criterion, nb_epochs,
+                train_input, train_target, valid_input, valid_target, mini_batch_size)
+
+    model.load_param(best['param'])
+
+    test(model, test_input, test_target, mini_batch_size)

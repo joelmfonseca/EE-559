@@ -93,6 +93,11 @@ class Sequential(Module):
             res.extend(module.param())
         return res
 
+    def load_param(self, param_to_load):
+        for i, t in enumerate(self.param()):
+            p, _ = t
+            p.sub_(p).add_(param_to_load[i][0])
+
     def print_param(self):
         param = self.param()
         for p, grad in param:
