@@ -24,23 +24,23 @@ if __name__ == '__main__':
 
     model = Sequential([
         Linear(2, 25),
-        PReLU(),
+        ReLU(),
         Linear(25, 25),
-        PReLU(),
+        ReLU(),
         Linear(25, 25),
-        PReLU(),
+        ReLU(),
         Linear(25, 25),
-        PReLU(),
+        ReLU(),
         Linear(25, 2)]
     )
 
-    lr = 0.001
+    lr = 0.01
     optimizer = SGD(model.param(), lr=lr)
-    # criterion = CrossEntropyLoss()
     criterion = MSELoss()
+    # criterion = CrossEntropyLoss()
 
     nb_epochs = 80
-    mini_batch_size = 10
+    mini_batch_size = 20
 
     best = train(model, optimizer, lr, criterion, nb_epochs,
                 train_input, train_target, valid_input, valid_target, mini_batch_size)

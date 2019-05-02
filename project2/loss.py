@@ -8,7 +8,7 @@ class MSELoss(Module):
         return (input - target).pow(2).mean()
 
     def backward(self):
-        return self.input - self.target
+        return (self.input - self.target).div_(self.input.size(0))
 
 class CrossEntropyLoss(Module):
 
