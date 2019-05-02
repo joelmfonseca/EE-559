@@ -27,6 +27,8 @@ def plot_dataset(input, target):
     ax.scatter(dict(in_).keys(), dict(in_).values(), c='r', label='inside')
     ax.scatter(dict(out_).keys(), dict(out_).values(), c='b', label='outside')
     plt.legend(framealpha=1)
+    plt.tight_layout()
+    plt.savefig('figures/dataset.png', dpi=300)
     plt.show()
 
 def compute_nb_errors(model, data_input, data_target, mini_batch_size):
