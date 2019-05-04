@@ -1,8 +1,11 @@
 import matplotlib.pyplot as plt
 import math
+import numpy as np
 import torch
 #torch.manual_seed(2019)
 torch.set_grad_enabled(False)
+
+from activation import Tanh, ReLU, LeakyReLU, PReLU
 
 def convert_to_one_hot_labels(input, target):
     tmp = input.new_zeros(target.size(0), target.max() + 1)
@@ -29,6 +32,27 @@ def plot_dataset(input, target):
     plt.legend(framealpha=1)
     plt.tight_layout()
     plt.savefig('figures/dataset.png', dpi=300)
+    plt.show()
+
+def plot_activations():
+    fig, ax = plt.subplots(1, 1, figsize=(5,5))
+    x_range = np.arange(-3, 3, 0.01)
+    x = torch.Tensor(x_range)
+    tanh = Tanh()
+    plt.plot(x_range, tanh.forward(x).numpy(), color='b', label='Tanh', alpha=0.5)
+    plt.plot(x_range, tanh.backward(1).numpy(), color='b', label='Tanh derivative', alpha=0.5, linestyle=':')
+    relu = ReLU()
+    plt.plot(x_range, relu.forward(x).numpy(), color='g', label='ReLU (0)', alpha=0.5)
+    plt.plot(x_range, relu.backward(1).numpy(), color='g', label='ReLU derivative', alpha=0.5, linestyle=':')
+    leakyrelu = LeakyReLU()
+    plt.plot(x_range, leakyrelu.forward(x).numpy(), color='m', label='LeakyReLU (0.01)', alpha=0.5)
+    plt.plot(x_range, leakyrelu.backward(1).numpy(), color='m', label='LeakyReLU derivative', alpha=0.5, linestyle=':')
+    prelu = PReLU(init=0.1)
+    plt.plot(x_range, prelu.forward(x).numpy(), color='y', label='PReLU', alpha=0.5)
+    plt.plot(x_range, prelu.backward(1).numpy(), color='y', label='PReLU derivative (0.1 - trainable)', alpha=0.5, linestyle=':')
+    plt.legend(framealpha=1)
+    plt.tight_layout()
+    plt.savefig('figures/activations.png', dpi=300)
     plt.show()
 
 def compute_nb_errors(model, data_input, data_target, mini_batch_size):
@@ -69,7 +93,7 @@ def train(model, optimizer, lr, criterion, nb_epochs,
 
         print('epoch: {:3}, loss: {:.7f}, train error: {:5.2f}%, valid error: {:5.2f}%'.format(
                     epoch,
-                    acc_loss/train_input.size(0),
+                    acc_loss/(train_input.size(0)/mini_batch_size),
                     train_error,
                     valid_error
                     )
@@ -96,3 +120,8 @@ def test(model, test_input, test_target, mini_batch_size):
 
     test_error = compute_nb_errors(model, test_input, test_target, mini_batch_size) / test_input.size(0) * 100
     print('best test error: {:5.2f}%'.format(test_error))
+
+
+if __name__ == '__main__':
+
+    plot_activations()

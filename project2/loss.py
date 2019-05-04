@@ -27,4 +27,4 @@ class CrossEntropyLoss(Module):
         return self.__nll_loss(input, target)
     
     def backward(self):
-        return self.input - self.target
+        return (self.input - self.target).div_(self.input.size(0))
