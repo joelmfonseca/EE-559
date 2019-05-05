@@ -1,6 +1,7 @@
 import math
 import torch
 torch.set_grad_enabled(False)
+torch.manual_seed(2019)
 
 class Module(object):
 

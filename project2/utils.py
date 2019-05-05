@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 import torch
-#torch.manual_seed(2019)
 torch.set_grad_enabled(False)
+torch.manual_seed(2019)
 
 from activation import Tanh, ReLU, LeakyReLU, PReLU
 
@@ -12,14 +12,37 @@ def convert_to_one_hot_labels(input, target):
     tmp.scatter_(1, target.view(-1, 1), 1.0)
     return tmp
 
+def gen_disc_set(num_samples=1000):
+    input = torch.empty(num_samples, 2).uniform_(0,1)
+    target = input.sub(0.5).pow(2).sum(1).sub(1 / (2*math.pi)).sign().sub(1).div(-2).long()
+    return input, convert_to_one_hot_labels(input, target)
+
 def standardise_input(train_input, valid_input, test_input):
-
     mean, std = train_input.mean(), train_input.std()
+    return train_input.sub(mean).div(std), valid_input.sub(mean).div(std), test_input.sub(mean).div(std)
 
-    train_input.sub_(mean).div_(std)
-    valid_input.sub_(mean).div_(std)
-    test_input.sub_(mean).div_(std)
+def build_CV_sets(k_fold, num_samples=1000):
 
+    samples_per_set = int(num_samples/k_fold)
+    fold_sets = []
+    for i in range(k_fold):
+        input, target = gen_disc_set(samples_per_set)
+        fold_sets.append((input, target))
+
+    k_fold_sets = []
+    for i in range(k_fold):
+        valid_input, valid_target = fold_sets[i]
+        train_input, train_target = [], []
+        for j in range(k_fold):
+            if i is not j:
+                # print(i,j)
+                input, target = fold_sets[j]
+                train_input.append(input)
+                train_target.append(target)
+        k_fold_sets.append((torch.cat(train_input), torch.cat(train_target), valid_input, valid_target))
+        
+    return k_fold_sets
+    
 def plot_dataset(input, target):
     fig, ax = plt.subplots(1, 1, figsize=(5,5))
     input = input.numpy()
@@ -60,7 +83,6 @@ def compute_nb_errors(model, data_input, data_target, mini_batch_size):
     for b in range(0, data_input.size(0), mini_batch_size):
         pred = model.forward(data_input.narrow(0, b, mini_batch_size))
         for k in range(mini_batch_size):
-            # print(data_target.data[b + k], pred[k])
             if torch.max(data_target.data[b + k], 0)[1] != torch.max(pred[k], 0)[1]:
                 nb_data_errors = nb_data_errors + 1
     return nb_data_errors
@@ -71,7 +93,12 @@ def copy(param):
         copy_param.append((p.clone(), grad.clone()))
     return copy_param
 
-def train(model, optimizer, lr, criterion, nb_epochs,
+def log(string):
+    log_info=False
+    if log_info:
+        print(string)
+
+def train(model, optimizer, lr, criterion,
                 train_input, train_target, valid_input, valid_target, mini_batch_size):
 
     patience = 20
@@ -91,7 +118,7 @@ def train(model, optimizer, lr, criterion, nb_epochs,
         train_error = compute_nb_errors(model, train_input, train_target, mini_batch_size) / train_input.size(0) * 100
         valid_error = compute_nb_errors(model, valid_input, valid_target, mini_batch_size) / valid_input.size(0) * 100
 
-        print('epoch: {:3}, loss: {:.7f}, train error: {:5.2f}%, valid error: {:5.2f}%'.format(
+        log('epoch: {:3}, loss: {:.7f}, train error: {:5.2f}%, valid error: {:5.2f}%'.format(
                     epoch,
                     acc_loss/(train_input.size(0)/mini_batch_size),
                     train_error,
@@ -105,22 +132,23 @@ def train(model, optimizer, lr, criterion, nb_epochs,
             best['param'] = copy(model.param())
 
         if epoch > best['epoch'] + patience:
-            print('Reached patience threshold. ({})'.format(patience))
+            log('Reached patience threshold. ({})'.format(patience))
             break
 
         epoch += 1
     
-    print('***')
-    print('Best model found at epoch {} with valid error: {:5.2f}%'.format(best['epoch'], best['error']))
-    print('***')
+    log('***')
+    log('Best model found at epoch {} with valid error: {:5.2f}%'.format(best['epoch'], best['error']))
+    log('***')
 
     return best
 
 def test(model, test_input, test_target, mini_batch_size):
 
     test_error = compute_nb_errors(model, test_input, test_target, mini_batch_size) / test_input.size(0) * 100
-    print('best test error: {:5.2f}%'.format(test_error))
+    log('best test error: {:5.2f}%'.format(test_error))
 
+    return test_error
 
 if __name__ == '__main__':
 

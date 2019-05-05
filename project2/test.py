@@ -1,50 +1,76 @@
+import time
+from tqdm import tqdm
+import numpy as np
 import torch
-torch.set_grad_enabled(False)
 
 from module import Linear, Sequential
 from activation import Tanh, ReLU, LeakyReLU, PReLU
 from optimizer import SGD
 from loss import MSELoss, CrossEntropyLoss
-from loader import gen_disc_set
-from utils import plot_dataset, convert_to_one_hot_labels, standardise_input, train, test
+from utils import gen_disc_set, plot_dataset, build_CV_sets, standardise_input, train, test
 
 if __name__ == '__main__':
 
-    validation_split = 0.2
-    train_input, train_target = gen_disc_set(1-validation_split)
-    valid_input, valid_target = gen_disc_set(validation_split)
-    test_input, test_target = gen_disc_set()
-    # plot_dataset(train_input, train_target)
-
-    train_target = convert_to_one_hot_labels(train_input, train_target)
-    valid_target = convert_to_one_hot_labels(valid_input, valid_target)
-    test_target = convert_to_one_hot_labels(test_input, test_target)
-
-    standardise_input(train_input, valid_input, test_input)
-
-    model = Sequential([
-        Linear(2, 25),
-        ReLU(),
-        Linear(25, 25),
-        ReLU(),
-        Linear(25, 25),
-        ReLU(),
-        Linear(25, 25),
-        ReLU(),
-        Linear(25, 2)]
-    )
-
     lr = 0.01
-    optimizer = SGD(model.param(), lr=lr)
-    criterion = MSELoss()
-    # criterion = CrossEntropyLoss()
+    k_fold = 10
+    CV_sets = build_CV_sets(k_fold, 1000)
+    print('CV sets built.')
+    test_input, test_target = gen_disc_set(1000)
 
-    nb_epochs = 80
-    mini_batch_size = 20
+    for criterion in [MSELoss()]:
+        for mini_batch_size in [10]:
+            for activation in [PReLU()]:
+                
+                print('***')
+                print('Criterion: {}, mini_batch_size: {}, activation: {}.'.format(
+                        criterion.__class__.__name__,
+                        mini_batch_size,
+                        activation.__class__.__name__)
+                )
+                print('***')
 
-    best = train(model, optimizer, lr, criterion, nb_epochs,
-                train_input, train_target, valid_input, valid_target, mini_batch_size)
+                training_time_acc = []
+                test_error_acc = []
+                for i in tqdm(range(k_fold), leave=False):
 
-    model.load_param(best['param'])
+                    torch.manual_seed(2019)
+                    model = Sequential([
+                        Linear(2, 25),
+                        activation,
+                        Linear(25, 25),
+                        activation,
+                        Linear(25, 25),
+                        activation,
+                        Linear(25, 25),
+                        activation,
+                        Linear(25, 2)]
+                    )
 
-    test(model, test_input, test_target, mini_batch_size)
+                    optimizer = SGD(model.param(), lr=lr)
+
+                    train_input, train_target, valid_input, valid_target = CV_sets[i]
+
+                    train_input, valid_input, test_input_ = standardise_input(train_input, valid_input, test_input)
+
+                    start = time.time()
+                    best = train(model, optimizer, lr, criterion,
+                                train_input, train_target, valid_input, valid_target, mini_batch_size)
+                    end = time.time()
+
+                    training_time = end-start
+                    training_time_acc.append(training_time)
+
+                    model.load_param(best['param'])
+
+                    test_error = test(model, test_input_, test_target, mini_batch_size)
+                    
+                    test_error_acc.append(test_error)
+                
+                
+                print('Results average over {}-fold CV. Training time: {:3.2f}(+/-{:3.2f})s. Test error: {:3.2f}(+/-{:3.2f})%.'.format(
+                        k_fold,
+                        np.mean(training_time_acc),
+                        np.std(training_time_acc),
+                        np.mean(test_error_acc),
+                        np.std(test_error_acc))
+                )
