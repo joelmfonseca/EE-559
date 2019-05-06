@@ -17,15 +17,15 @@ if __name__ == '__main__':
     print('CV sets built.')
     test_input, test_target = gen_disc_set(1000)
 
-    for criterion in [MSELoss()]:
-        for mini_batch_size in [10]:
-            for activation in [PReLU()]:
+    for criterion in [MSELoss(), CrossEntropyLoss()]:
+        for mini_batch_size in [20]:
+            for activation in [Tanh()]:
                 
                 print('***')
                 print('Criterion: {}, mini_batch_size: {}, activation: {}.'.format(
-                        criterion.__class__.__name__,
+                        criterion.name(),
                         mini_batch_size,
-                        activation.__class__.__name__)
+                        activation.name())
                 )
                 print('***')
 
@@ -35,15 +35,15 @@ if __name__ == '__main__':
 
                     torch.manual_seed(2019)
                     model = Sequential([
-                        Linear(2, 25),
+                        Linear(2, 25, activation.name()),
                         activation,
-                        Linear(25, 25),
+                        Linear(25, 25, activation.name()),
                         activation,
-                        Linear(25, 25),
+                        Linear(25, 25, activation.name()),
                         activation,
-                        Linear(25, 25),
+                        Linear(25, 25, activation.name()),
                         activation,
-                        Linear(25, 2)]
+                        Linear(25, 2, activation.name())]
                     )
 
                     optimizer = SGD(model.param(), lr=lr)

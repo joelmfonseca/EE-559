@@ -13,10 +13,14 @@ class Module(object):
 
     def param(self):
         return []
+    
+    def name(self):
+        return self.__class__.__name__
 
 class Linear(Module):
 
-    def __init__(self, in_features, out_features, bias=True):
+    def __init__(self, in_features, out_features, activation, bias=True):
+        self.activation = activation
         self.in_features = in_features
         self.out_features = out_features
         self.weight = torch.empty(out_features, in_features)
@@ -28,22 +32,36 @@ class Linear(Module):
         self.grad_bias = torch.empty(self.bias.size()).zero_()
         self.reset_parameters()
 
-    def reset_parameters(self):
+    def reset_parameters(self, init='xavier'):
 
         def xavier_normal_(tensor, gain):
             fan_in, fan_out = self.in_features, self.out_features
             std = gain * math.sqrt(2.0 / (fan_in + fan_out))
             return tensor.normal_(0, std)
 
-        std = 1. / math.sqrt(self.weight.size(1))
-        eps = 1e-6
-        # self.weight.uniform_(-1, 1)
-        # self.weight.normal_(0, eps)
-        self.weight = xavier_normal_(self.weight, gain=5.0/3)
-        if self.bias is not None:
-            # self.bias.uniform_(-1, 1)
-            # self.bias.normal_(0, eps)
-            self.bias = xavier_normal_(self.bias, gain=5.0/3)
+        if init == 'xavier':
+            if self.activation == 'Tanh':
+                gain = 5.0/3
+            elif self.activation == 'ReLU':
+                gain = math.sqrt(2)
+            elif self.activation == 'LeakyRelu':
+                negative_slope = 0.01
+                gain = math.sqrt(2.0/(1+negative_slope**2))
+            else:
+                negative_slope = 0.25
+                gain = math.sqrt(2.0/(1+negative_slope**2))
+            self.weight = xavier_normal_(self.weight, gain)
+            if self.bias is not None:
+                self.bias = xavier_normal_(self.bias, gain)
+        elif init == 'uniform':
+            std = 1. / math.sqrt(self.weight.size(1))
+            self.weight.uniform_(-std,std)
+            if self.bias is not None:
+                self.bias.uniform_(-std,std)
+        elif init == 'normal':
+            self.weight.normal_(0,1)
+            if self.bias is not None:
+                self.bias.normal_(0,1)
 
     def forward(self, input):
         self.input = input
@@ -54,14 +72,6 @@ class Linear(Module):
 
     def backward(self, grad_output):
         self.grad_input = grad_output.matmul(self.weight)
-
-        # print('grad_output: ', grad_output.size())
-        # print('input: ', self.input.size())
-        # print('weight: ', self.weight.size())
-        # print('grad_weight: ', self.grad_weight.size())
-        # print('bias: ', self.bias.size())
-        # print('grad_bias: ', self.grad_bias.size())
-
         self.grad_weight.add_(grad_output.t().matmul(self.input))
         if self.bias is not None:
             self.grad_bias.add_(grad_output.sum(0))

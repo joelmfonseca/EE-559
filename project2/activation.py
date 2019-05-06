@@ -31,7 +31,7 @@ class LeakyReLU(Module):
         return input.clamp(min=0) + self.negative_slope*input.clamp(max=0)
 
     def backward(self, grad_output):
-        return grad_output * (self.input.sign().clamp(min=0) - self.input.sign().clamp(max=0).mul_(self.negative_slope))
+        return grad_output * (self.input.sign().clamp(min=0) - self.input.sign().clamp(max=0).mul(self.negative_slope))
 
 class PReLU(Module):
 
@@ -46,10 +46,10 @@ class PReLU(Module):
 
     def backward(self, grad_output):
         if self.num_parameters == 1:
-            self.grad_a.add_((grad_output*self.input.clamp(min=0)).sum(0).mean())
+            self.grad_a.add_((grad_output*self.input.clamp(max=0)).sum(0).mean())
         else:
-            self.grad_a.add_((grad_output*self.input.clamp(min=0)).sum(0))
-        return grad_output * (self.input.sign().clamp(min=0) - self.input.sign().clamp(max=0).mul_(self.a))
+            self.grad_a.add_((grad_output*self.input.clamp(max=0)).sum(0))
+        return grad_output * (self.input.sign().clamp(min=0) - self.input.sign().clamp(max=0).mul(self.a))
 
     def param(self):
         return [(self.a, self.grad_a)]
