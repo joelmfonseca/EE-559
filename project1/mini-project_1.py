@@ -596,7 +596,7 @@ def grid_search(models, optimizers, learning_rates, train_input, train_target, t
                     alphas = [0.8, 0.8, 1]
                     #optimizer = torch.optim.SGD(model.parameters(), lr = 0.1, momentum = 0.85)
                     training_time = train_model_aux(model, optimizer(model.parameters(), lr=learning_rate), nb_epochs, \
-                                                        train_input, train_target, train_class, mini_batch_size, 0.2, 0.8, 1.5)
+                                                        train_input, train_target, train_class, test_input, test_target, mini_batch_size, 0.2, 0.8, 1.5)
                 
                 elif model.__class__.__name__ == 'NetAux3' or model.__class__.__name__ == "NetAux4":
                     alphas = [0.8, 0.8, 1]
@@ -650,15 +650,16 @@ if __name__ == '__main__':
     #models = [NetSharing1, NetSharing2, NetSharing3, Netaux]
     #models = [NetAuxiliary1, NetAuxiliary2]
     #models= [Net1, Net2, NetSharing1, NetSharing2, NetSharing3 ,NetAux1, NetAux2, NetAux3, NetAux4, Net3]
-    models = [NetAux4]
+    models = [NetAux1, NetAux1]
     optimizers = [optim.SGD]
     #optimizers = [optim.SGD, optim.Adam, optim.RMSprop]
     learning_rates = [1e-1]
     #learning_rates = [1e-1, 1e-2, 1e-3, 0.005]
     #learning_rates = [1e-1, 1e-2, 0.005]
     #learning_rates = [0.005]
+    # opt_lr = [(optim.SGD, 1e-1), ()]
    
-    # grid_search(models, optimizers, learning_rates, train_input, train_target, train_class, test_input, test_target, nb_epochs, mini_batch_size)
+    grid_search(models, optimizers, learning_rates, train_input, train_target, train_class, test_input, test_target, nb_epochs, mini_batch_size)
 
     # plot_model_comparison(train_input, train_target, train_class, test_input, test_target, optim.SGD, 1e-1, nb_epochs, mini_batch_size)
-    plot_netsharing_comparison(train_input, train_target, test_input, test_target, optim.SGD, 1e-1, nb_epochs, mini_batch_size)
+    # plot_netsharing_comparison(train_input, train_target, test_input, test_target, optim.SGD, 1e-1, nb_epochs, mini_batch_size)
