@@ -9,7 +9,6 @@ from torch.autograd import Variable
 from torch.nn import functional as F
 
 import dlc_practical_prologue as prologue
-from utils import *
 
 class Net1(nn.Module):
     def __init__(self, nb_hidden=100):
@@ -404,7 +403,7 @@ class NetAux4(nn.Module):
         if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
             m.reset_parameters()
 
-def train_model_aux(model, optimizer, nb_epochs, train_input, train_target,train_class ,mini_batch_size, \
+def train_model_aux(model, optimizer, nb_epochs, train_input, train_target, train_class, test_input, test_target, mini_batch_size, \
                    alpha_1, alpha_2, alpha_3, graph = False):
 
     test = []
@@ -430,12 +429,10 @@ def train_model_aux(model, optimizer, nb_epochs, train_input, train_target,train
             optimizer.step()
 
         if graph:
-            test.append(100 - compute_nb_errors(model, test_input, test_target, MINI_BATCH_SIZE) / test_input.size(0) * 100)
-            train.append(100 - compute_nb_errors(model, train_input, train_target, MINI_BATCH_SIZE) / train_input.size(0) * 100)
+            test.append(100 - compute_nb_errors(model, test_input, test_target, mini_batch_size) / test_input.size(0) * 100)
+            train.append(100 - compute_nb_errors(model, train_input, train_target, mini_batch_size) / train_input.size(0) * 100)
 
-        
     end = time.time()
-
     training_time = end-start
 
     if graph:
@@ -443,7 +440,7 @@ def train_model_aux(model, optimizer, nb_epochs, train_input, train_target,train
     else:
         return training_time
 
-def train_model_aux_bin(model, optimizer, nb_epochs, train_input, train_target,train_class ,mini_batch_size, \
+def train_model_aux_bin(model, optimizer, nb_epochs, train_input, train_target, train_class, test_input, test_target, mini_batch_size, \
                    alpha_1, alpha_2, alpha_3, graph = False):
 
     test = []
@@ -469,11 +466,10 @@ def train_model_aux_bin(model, optimizer, nb_epochs, train_input, train_target,t
             optimizer.step()
 
         if graph:
-            test.append(100 - compute_nb_errors(model, test_input, test_target, MINI_BATCH_SIZE) / test_input.size(0) * 100)
-            train.append(100 - compute_nb_errors(model, train_input, train_target, MINI_BATCH_SIZE) / test_input.size(0) * 100)
+            test.append(100 - compute_nb_errors(model, test_input, test_target, mini_batch_size) / test_input.size(0) * 100)
+            train.append(100 - compute_nb_errors(model, train_input, train_target, mini_batch_size) / test_input.size(0) * 100)
         
     end = time.time()
-
     training_time = end-start
 
     if graph:
@@ -481,7 +477,7 @@ def train_model_aux_bin(model, optimizer, nb_epochs, train_input, train_target,t
     else:
         return training_time
 
-def train_model(model, optimizer, nb_epochs, train_input, train_target ,mini_batch_size, graph = False):
+def train_model(model, optimizer, nb_epochs, train_input, train_target, test_input, test_target, mini_batch_size, graph = False):
 
     test  = []
     train = []
@@ -496,8 +492,8 @@ def train_model(model, optimizer, nb_epochs, train_input, train_target ,mini_bat
             optimizer.step()
 
         if graph:
-            test.append(100 - compute_nb_errors(model, test_input, test_target, MINI_BATCH_SIZE) / train_input.size(0) * 100)
-            train.append(100 - compute_nb_errors(model, train_input, train_target, MINI_BATCH_SIZE) / train_input.size(0) * 100)
+            test.append(100 - compute_nb_errors(model, test_input, test_target, mini_batch_size) / train_input.size(0) * 100)
+            train.append(100 - compute_nb_errors(model, train_input, train_target, mini_batch_size) / train_input.size(0) * 100)
     
     end = time.time()
 
@@ -523,21 +519,21 @@ def update_target_type(model, data_target, test_target):
     type_ = model.target_type
     return data_target.type(type_), test_target.type(type_)
 
-def plot_model_comparison(train_input, train_target, test_target, optimizer, learning_rate, nb_epochs, mini_batch_size):
+def plot_model_comparison(train_input, train_target, train_class, test_input, test_target, optimizer, learning_rate, nb_epochs, mini_batch_size):
     model_raw = Net1()
     train_target, test_target = update_target_type(model_raw, train_target, test_target)
     test_raw, train_raw = train_model(model_raw, optimizer(model_raw.parameters(), lr=learning_rate), nb_epochs, \
-                        train_input, train_target, mini_batch_size, True)
+                        train_input, train_target, test_input, test_target, mini_batch_size, True)
 
     model_weight = NetSharing1()
     train_target, test_target = update_target_type(model_weight, train_target, test_target)
     test_weight, train_weight = train_model(model_weight, optimizer(model_weight.parameters(), lr=learning_rate), nb_epochs, \
-                        train_input, train_target, mini_batch_size, True)
+                        train_input, train_target, test_input, test_target, mini_batch_size, True)
 
     model_aux = NetAux4()
     train_target, test_target = update_target_type(model_aux, train_target, test_target)
     test_aux, train_aux = train_model_aux_bin(model_aux, optimizer(model_aux.parameters(), lr=learning_rate, momentum = 0.7), nb_epochs, \
-                         train_input, train_target, train_classes, mini_batch_size, 0.2, 0.8, 1.5, True)
+                         train_input, train_target, train_class, test_input, test_target, mini_batch_size, 0.2, 0.8, 1.5, True)
 
     plt.plot(test_raw, label = 'Standard model')
     plt.plot(test_weight, label = 'Weight sharing model')
@@ -551,21 +547,21 @@ def plot_model_comparison(train_input, train_target, test_target, optimizer, lea
     plt.savefig('figures/model_comparison.png', dpi=300)
     plt.show()
 
-def plot_netsharing_comparison(train_input, train_target, test_target, optimizer, learning_rate, nb_epochs, mini_batch_size):
+def plot_netsharing_comparison(train_input, train_target, test_input, test_target, optimizer, learning_rate, nb_epochs, mini_batch_size):
     model_weight_1 = NetSharing1()
     train_target, test_target = update_target_type(model_weight_1, train_target, test_target)
     test_weight_1, train_weight_1 = train_model(model_weight_1, optimizer(model_weight_1.parameters(), lr=learning_rate), nb_epochs, \
-                        train_input, train_target, mini_batch_size, True)
+                        train_input, train_target, test_input, test_target, mini_batch_size, True)
 
     model_weight_2 = NetSharing2()
     train_target, test_target = update_target_type(model_weight_2, train_target, test_target)
     test_weight_2, train_weight_2 = train_model(model_weight_2, optimizer(model_weight_2.parameters(), lr=learning_rate), nb_epochs, \
-                        train_input, train_target, mini_batch_size, True)
+                        train_input, train_target, test_input, test_target, mini_batch_size, True)
 
     model_weight_3 = NetSharing3()
     train_target, test_target = update_target_type(model_weight_3, train_target, test_target)
     test_weight_3, train_weight_3 = train_model(model_weight_3, optimizer(model_weight_3.parameters(), lr=learning_rate), nb_epochs, \
-                        train_input, train_target, mini_batch_size, True)
+                        train_input, train_target, test_input, test_target, mini_batch_size, True)
 
     plt.plot(test_weight_1,label = 'Weight sharing model 1')
     plt.plot(test_weight_2, label = 'Weight sharing model 2')
@@ -579,20 +575,19 @@ def plot_netsharing_comparison(train_input, train_target, test_target, optimizer
     plt.savefig('figures/weight_sharing_comparison.png', dpi=300)
     plt.show()
 
-def grid_search(models, optimizers, learning_rates, train_input, train_target, train_classes, test_input, test_target, nb_epochs, mini_batch_size):
+def grid_search(models, optimizers, learning_rates, train_input, train_target, train_class, test_input, test_target, nb_epochs, mini_batch_size):
     for m in models:
-
-        if model.__class__.__name__ == 'Net3':
-            train_input_Net3 = train_input.view(-1, 1, 14, 14)
-            train_target_Net3 = train_classes.flatten()
-
         for optimizer in optimizers:
             for learning_rate in learning_rates:
                 
                 model = m()
                 model.apply(model.weight_init)
                 train_target, test_target = update_target_type(model, train_target, test_target)
-                  
+                
+                if model.__class__.__name__ == 'Net3':
+                    train_input_Net3 = train_input.view(-1, 1, 14, 14)
+                    train_target_Net3 = train_class.flatten()
+
                 if model.__class__.__name__ == 'Net3':
                     training_time = train_model(model, optimizer(model.parameters(), lr=learning_rate), nb_epochs, \
                                                     train_input_Net3, train_target_Net3, mini_batch_size)
@@ -601,23 +596,23 @@ def grid_search(models, optimizers, learning_rates, train_input, train_target, t
                     alphas = [0.8, 0.8, 1]
                     #optimizer = torch.optim.SGD(model.parameters(), lr = 0.1, momentum = 0.85)
                     training_time = train_model_aux(model, optimizer(model.parameters(), lr=learning_rate), nb_epochs, \
-                                                        train_input, train_target, train_classes, mini_batch_size, 0.2, 0.8, 1.5)
+                                                        train_input, train_target, train_class, mini_batch_size, 0.2, 0.8, 1.5)
                 
                 elif model.__class__.__name__ == 'NetAux3' or model.__class__.__name__ == "NetAux4":
                     alphas = [0.8, 0.8, 1]
                     #optimizer = torch.optim.SGD(model.parameters(), lr = 0.1, momentum = 0.85)
                     if optimizer == optim.SGD:
                         training_time = train_model_aux_bin(model, optimizer(model.parameters(), lr=learning_rate, momentum = 0.7), nb_epochs, \
-                                                                train_input, train_target, train_classes, mini_batch_size, 0.2, 0.8, 1.5)
+                                                                train_input, train_target, train_class, test_input, test_target, mini_batch_size, 0.2, 0.8, 1.5)
                     elif optimizer == optim.RMSprop:
                         training_time = train_model_aux_bin(model, optimizer(model.parameters(), lr=learning_rate, alpha = 0.9), nb_epochs, \
-                                                                train_input, train_target, train_classes, mini_batch_size, 0.2, 0.8, 1.5)
+                                                                train_input, train_target, train_class, test_input, test_target, mini_batch_size, 0.2, 0.8, 1.5)
                     else:
                         training_time = train_model_aux_bin(model, optimizer(model.parameters(), lr=learning_rate, betas=(0.9,0.99)), nb_epochs, \
-                                                                train_input, train_target, train_classes, mini_batch_size, 0.2, 0.8, 1.5)
+                                                                train_input, train_target, train_class, test_input, test_target, mini_batch_size, 0.2, 0.8, 1.5)
                 else:
                     training_time = train_model(model, optimizer(model.parameters(), lr=learning_rate), nb_epochs, \
-                        train_input, train_target, mini_batch_size)
+                        train_input, train_target, test_input, test_target, mini_batch_size)
                             
                 print('model: {:>13}, criterion: {:>10}, optimizer: {:>10}, learning rate: {:6}, num epochs: {:3}, '
                     'mini batch size: {:3}, training time: {:5.2f}, train error: {:5.2f}%, test error: {:5.2f}%'.format(
@@ -645,7 +640,7 @@ if __name__ == '__main__':
     train_input.sub_(mean).div_(std)
     test_input.sub_(mean).div_(std)
 
-    train_input, train_target, train_classes = Variable(train_input), Variable(train_target), Variable(train_classes)
+    train_input, train_target, train_class = Variable(train_input), Variable(train_target), Variable(train_classes)
     test_input, test_target = Variable(test_input), Variable(test_target)
 
     # test different configurations
@@ -663,7 +658,7 @@ if __name__ == '__main__':
     #learning_rates = [1e-1, 1e-2, 0.005]
     #learning_rates = [0.005]
    
-    grid_search(models, optimizers, learning_rates, train_input, train_target, train_classes, test_input, test_target, nb_epochs, mini_batch_size)
+    # grid_search(models, optimizers, learning_rates, train_input, train_target, train_class, test_input, test_target, nb_epochs, mini_batch_size)
 
-    # plot_model_comparison(train_input, train_target, test_target, optimizer, learning_rate, nb_epochs, mini_batch_size)
-    # plot_netsharing_comparison(train_input, train_target, test_target, optimizer, learning_rate, nb_epochs, mini_batch_size)
+    # plot_model_comparison(train_input, train_target, train_class, test_input, test_target, optim.SGD, 1e-1, nb_epochs, mini_batch_size)
+    plot_netsharing_comparison(train_input, train_target, test_input, test_target, optim.SGD, 1e-1, nb_epochs, mini_batch_size)
