@@ -12,12 +12,12 @@ The content of this project is composed of different parts:
 
     - **`dlc_practical_prologue.py`**: contains help functions given by the course.
 
+    - **`models.py`**: contains all the models implemented throughout the project.
+
     - **`settings.py`**: defines the main settings used for the training (nb epochs, batch size, learning rate).
 
-    - **`utils.py`**: contains utilitary functions used throughout the project.
-
-    - **`models.py`**: contains all the models implemented throughout the project.
+    - **`test.py`**: is the main file which can be run.
 
     - **`train.py`**: contains the different training functions for every type of model.
 
-    - **`test.py`**: is the main file which can be run.
+    - **`utils.py`**: contains utilitary functions used throughout the project.

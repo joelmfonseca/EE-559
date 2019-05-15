@@ -8,14 +8,14 @@ The content of this project is composed of different parts:
 
 - several `.py` files:
 
-    - **`utils.py`**: contains utilitary functions used throughout the project.
-
-    - **`module.py`**: contains the `Module` class as well as the Linear and Sequential modules.
-
     - **`activation.py`**: contains the Tanh, ReLU, LeakyReLU and PReLU activation functions.
 
     - **`loss.py`**: contains the MSE and CrossEntropy losses.
 
+    - **`module.py`**: contains the `Module` class as well as the Linear and Sequential modules.
+
     - **`optimizer.py`**: contains the `Optimizer` class as well as the SGD optimizer.
 
     - **`test.py`**: is the main file which can be run.
+
+    - **`utils.py`**: contains utilitary functions used throughout the project.
