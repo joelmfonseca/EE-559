@@ -1,16 +1,11 @@
 import time
-import matplotlib.pyplot as plt
 
 import torch
 from torch import nn
-from torch import optim
-from torch.autograd import Variable
 from torch.nn import functional as F
-import numpy as np
-
-import dlc_practical_prologue as prologue
 
 class Net1(nn.Module):
+    '''This class implements the standard model with Cross Entropy loss.'''
     def __init__(self, nb_hidden=100):
         super(Net1, self).__init__()
         self.conv1 = nn.Conv2d(2, 32, kernel_size=3)
@@ -36,6 +31,7 @@ class Net1(nn.Module):
             m.reset_parameters()
 
 class Net2(nn.Module):
+    '''This class implements the standard model with Binary Cross Entropy loss.'''
     def __init__(self, nb_hidden=100):
         super(Net2, self).__init__()
         self.conv1 = nn.Conv2d(2, 32, kernel_size=3)
@@ -61,6 +57,7 @@ class Net2(nn.Module):
             m.reset_parameters()
 
 class Net3(nn.Module):
+    '''This class implements the classification based model with Cross Entropy loss.'''
     def __init__(self,nb_hidden = 100):
         super(Net3, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
@@ -100,6 +97,7 @@ class Net3(nn.Module):
             m.reset_parameters()
 
 class NetSharing1(nn.Module):
+    '''This class implements the weight sharing model with Cross Entropy loss.'''
     def __init__(self, nb_hidden=100):
         super(NetSharing1, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
@@ -134,6 +132,7 @@ class NetSharing1(nn.Module):
             m.reset_parameters()
 
 class NetSharing2(nn.Module):
+    '''This class implements the weight sharing model with Binary Cross Entropy loss.'''
     def __init__(self, nb_hidden=100):
         super(NetSharing2, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
@@ -168,6 +167,7 @@ class NetSharing2(nn.Module):
             m.reset_parameters()
 
 class NetSharing3(nn.Module):
+    '''This class implements the weight sharing model with Cross Entropy loss and an additional FC layer.'''
     def __init__(self, nb_hidden=100):
         super(NetSharing3, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
@@ -204,6 +204,7 @@ class NetSharing3(nn.Module):
             m.reset_parameters()
 
 class NetAux1(nn.Module):
+    '''This class implements the model with auxiliary loss and the Cross Entropy loss.'''
     def __init__(self, nb_hidden=100):
         super(NetAux1, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
@@ -223,24 +224,17 @@ class NetAux1(nn.Module):
         x1 = F.relu(F.max_pool2d(self.conv2(x1), kernel_size=2, stride=2))
         x1 = x1.view(-1, 256)
         x1 = F.relu(self.fc1(x1)) 
-        #original en dessous
         x1 = self.fc2(x1)
-        #test en dessous
-        #x1 = F.relu(self.fc2(x1))
         
         x2 = F.relu(F.max_pool2d(self.conv1(x_1), kernel_size=2, stride=2))
         x2 = F.relu(F.max_pool2d(self.conv2(x2), kernel_size=2, stride=2))
         x2 = x2.view(-1, 256)
         x2 = F.relu(self.fc1(x2))
-        #original en dessous
         x2 = self.fc2(x2)
-        #test en dessous
-        #x2 = F.relu(self.fc2(x2))
 
         x = torch.cat((x1,x2),1)
         x = F.relu(self.fc3(x))
         x = self.fc4(x)
-        #x = F.relu(self.fc4(x))
         
         return x1,x2,x
 
@@ -255,6 +249,7 @@ class NetAux1(nn.Module):
             m.reset_parameters()
 
 class NetAux2(nn.Module):
+    '''This class implements the model with auxiliary loss and both types of losses.'''
     def __init__(self, nb_hidden=100):
         super(NetAux2, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
@@ -273,25 +268,18 @@ class NetAux2(nn.Module):
         x1 = F.relu(F.max_pool2d(self.conv1(x_0), kernel_size=2, stride=2))
         x1 = F.relu(F.max_pool2d(self.conv2(x1), kernel_size=2, stride=2))
         x1 = x1.view(-1, 256)
-        x1 = F.relu(self.fc1(x1)) 
-        #original en dessous
+        x1 = F.relu(self.fc1(x1))
         x1 = self.fc2(x1)
-        #test en dessous
-        #x1 = F.relu(self.fc2(x1))
         
         x2 = F.relu(F.max_pool2d(self.conv1(x_1), kernel_size=2, stride=2))
         x2 = F.relu(F.max_pool2d(self.conv2(x2), kernel_size=2, stride=2))
         x2 = x2.view(-1, 256)
         x2 = F.relu(self.fc1(x2))
-        #original en dessous
         x2 = self.fc2(x2)
-        #test en dessous
-        #x2 = F.relu(self.fc2(x2))
 
         x = torch.cat((x1,x2),1)
         x = F.relu(self.fc3(x))
         x = self.fc4(x)
-        #x = F.relu(self.fc4(x))
         
         return x1,x2,x
 
@@ -304,6 +292,7 @@ class NetAux2(nn.Module):
             m.reset_parameters()
 
 class NetAux3(nn.Module):
+    '''This class implements the model with auxiliary loss, both types of losses and an additional FC layer.'''
     def __init__(self, nb_hidden=100):
         super(NetAux3, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3)
@@ -324,19 +313,13 @@ class NetAux3(nn.Module):
         x1 = F.relu(F.max_pool2d(self.conv2(x1), kernel_size=2, stride=2))
         x1 = x1.view(-1, 256)
         x1 = F.relu(self.fc1(x1)) 
-        #original en dessous
         x1 = self.fc2(x1)
-        #test en dessous
-        #x1 = F.softmax(self.fc2(x1))
         
         x2 = F.relu(F.max_pool2d(self.conv1(x_1), kernel_size=2, stride=2))
         x2 = F.relu(F.max_pool2d(self.conv2(x2), kernel_size=2, stride=2))
         x2 = x2.view(-1, 256)
         x2 = F.relu(self.fc1(x2))
-        #original en dessous
         x2 = self.fc2(x2)
-        #test en dessous
-        #x2 = F.softmax(self.fc2(x2))
 
         x = torch.cat((x1,x2),1)
         x = F.relu(self.fc3(x))

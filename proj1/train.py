@@ -1,18 +1,8 @@
 import time
-import matplotlib.pyplot as plt
-
 import torch
-from torch import nn
-from torch import optim
-from torch.autograd import Variable
-from torch.nn import functional as F
-import numpy as np
-
-import dlc_practical_prologue as prologue
-
 
 def train_model(model, optimizer, nb_epochs, train_input, train_target, test_input, test_target, mini_batch_size, graph = False):
-
+    '''This function trains the model based on the parameters passed by argument.'''
     test  = []
     train = []
     start = time.time()
@@ -34,14 +24,13 @@ def train_model(model, optimizer, nb_epochs, train_input, train_target, test_inp
     training_time = end-start
 
     if graph:
-        return test,train
+        return test, train
     else :
         return training_time
 
-
 def train_model_aux(model, optimizer, nb_epochs, train_input, train_target, train_class, test_input, test_target, mini_batch_size, \
                    alpha_1, alpha_2, alpha_3, graph = False):
-
+    '''This function trains the model with auxiliary loss based on the parameters passed by argument.'''
     test = []
     train = []
     start = time.time()
@@ -78,7 +67,7 @@ def train_model_aux(model, optimizer, nb_epochs, train_input, train_target, trai
 
 def train_model_aux_bin(model, optimizer, nb_epochs, train_input, train_target, train_class, test_input, test_target, mini_batch_size, \
                    alpha_1, alpha_2, alpha_3, graph = False):
-
+    '''This functions trains the model with auxiliary loss and binary cross entropy loss with the parameters passed by argument.'''
     test = []
     train = []
     start = time.time()
@@ -112,5 +101,3 @@ def train_model_aux_bin(model, optimizer, nb_epochs, train_input, train_target, 
         return test, train
     else:
         return training_time
-
-

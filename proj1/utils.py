@@ -1,20 +1,14 @@
 import time
 import matplotlib.pyplot as plt
-
-import torch
-from torch import nn
-from torch import optim
-from torch.autograd import Variable
-from torch.nn import functional as F
 import numpy as np
 
-import dlc_practical_prologue as prologue
+import torch
+from torch import optim
 
-from trainer import *
+from train import *
 
-#function that compute the number of errors.
 def compute_nb_errors(model, data_input, data_target, mini_batch_size):
-
+    '''This function computes the number of errors between the model prediction and the groundtruth.'''
     nb_data_errors = 0
     for b in range(0, data_input.size(0), mini_batch_size):
         pred = model.predict(data_input.narrow(0, b, mini_batch_size))
@@ -24,20 +18,18 @@ def compute_nb_errors(model, data_input, data_target, mini_batch_size):
 
     return nb_data_errors
 
-#function that update the target type for each model.
 def update_target_type(model, data_target, test_target):
+    '''This function updates the target type to use depending on the model.'''
     type_ = model.target_type
     return data_target.type(type_), test_target.type(type_)
 
-#function that plot the three main model, ie : standard, weight-sharing and auxiliary loss.
 def plot_model_comparison(train_input, train_target, train_class, test_input, test_target, optimizer, learning_rate, nb_epochs, mini_batch_size):
+    '''This function plots the accuracy on the test set during training for the three main classes of model we implemented: standard, weight sharing and auxiliary models.'''
     model_raw = Net1()
     train_target, test_target = update_target_type(model_raw, train_target, test_target)
     test_raw, train_raw = train_model(model_raw, optimizer(model_raw.parameters(), lr=learning_rate), nb_epochs, \
                         train_input, train_target, test_input, test_target, mini_batch_size, True)
 
-    model_weight = NetSharing1()
-    model_weight = NetSharing1()
     model_weight = NetSharing1()
     train_target, test_target = update_target_type(model_weight, train_target, test_target)
     test_weight, train_weight = train_model(model_weight, optimizer(model_weight.parameters(), lr=learning_rate), nb_epochs, \
@@ -59,8 +51,8 @@ def plot_model_comparison(train_input, train_target, train_class, test_input, te
     plt.savefig('figures/model_comparison.png', dpi=300)
     plt.show()
 
-#function that plot the three weight sharing models.
 def plot_netsharing_comparison(train_input, train_target, test_input, test_target, optimizer, learning_rate, nb_epochs, mini_batch_size):
+    '''This function plots the accuracy on the test set during training for the three weight sharing models implemented.'''
     model_weight_1 = NetSharing1()
     train_target, test_target = update_target_type(model_weight_1, train_target, test_target)
     test_weight_1, train_weight_1 = train_model(model_weight_1, optimizer(model_weight_1.parameters(), lr=learning_rate), nb_epochs, \
@@ -88,13 +80,12 @@ def plot_netsharing_comparison(train_input, train_target, test_input, test_targe
     plt.savefig('figures/weight_sharing_comparison.png', dpi=300)
     plt.show()
 
-
-#function that train our models, in function of the model, optimizer, learning rate, number of epochs and mini batch size.
 def grid_search(models, optimizers, learning_rates, train_input, train_target, train_class, test_input, test_target, nb_epochs, mini_batch_size):
+    '''This function applies a grid search based on the models, optimizers and learning rates passed by argument.'''
     test_errors = []
     times = []
-    #for every model, optimizer and learning rate, we apply the good training function (ie, we train de model), for example NetAux1 is trained with
-    #train_model_aux function but NetAux2 with train_model_aux_bin.
+    # for every model, optimizer and learning rate, we apply the good training function (ie, we train the model), for example NetAux1 is trained with
+    # train_model_aux function but NetAux2 with train_model_aux_bin due to their different architecture.
     for m in models:
         for optimizer in optimizers:
             for learning_rate in learning_rates:
@@ -114,13 +105,17 @@ def grid_search(models, optimizers, learning_rates, train_input, train_target, t
 
                 elif model.__class__.__name__ == 'NetAux1':
                     alphas = [0.8, 0.8, 1]
+
                     #optimizer = torch.optim.SGD(model.parameters(), lr = 0.1, momentum = 0.85)
+
                     training_time = train_model_aux(model, optimizer(model.parameters(), lr=learning_rate), nb_epochs, \
                                                         train_input, train_target, train_class, test_input, test_target, mini_batch_size, 0.2, 0.8, 1.5)
                 
                 elif model.__class__.__name__ == 'NetAux2' or model.__class__.__name__ == "NetAux3":
                     alphas = [0.8, 0.8, 1]
+
                     #optimizer = torch.optim.SGD(model.parameters(), lr = 0.1, momentum = 0.85)
+
                     if optimizer == optim.SGD:
                         training_time = train_model_aux_bin(model, optimizer(model.parameters(), lr=learning_rate, momentum = 0.7), nb_epochs, \
                                                                 train_input, train_target, train_class, test_input, test_target, mini_batch_size, 0.2, 0.8, 1.5)
@@ -152,19 +147,18 @@ def grid_search(models, optimizers, learning_rates, train_input, train_target, t
                     )
                 )
 
-    ####AVERAGE for the report (and standard deviations) ####
+    # take the mean and std for the report
     mean_test_errors = np.mean(test_errors)
     std_test_errors = np.std(test_errors)
     mean_training_time = np.mean(times)
     std_training_time = np.std(times)
 
-   
-    #print('--------------------------------')
-    #print('model : {:>13}, Average training time : {:5.2f} +- {:5.2f}, Average test error: {:5.2f}% +- {:5.2f}'.format(
+    # print('--------------------------------')
+    # print('model : {:>13}, Average training time : {:5.2f} +- {:5.2f}, Average test error: {:5.2f}% +- {:5.2f}'.format(
     #    model.__class__.__name__,
     #    mean_training_time, 
     #    std_training_time,
     #    mean_test_errors,
     #    std_test_errors
     #    )
-    #)
+    # )
