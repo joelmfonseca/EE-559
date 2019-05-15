@@ -19,3 +19,12 @@ The content of this project is composed of different parts:
     - **`test.py`**: is the main file which can be run.
 
     - **`utils.py`**: contains utilitary functions used throughout the project.
+
+---
+**NOTE**
+
+You might need to install `tqdm` to run our project properly (if you use the provided VM). To install it simply run the following command:
+
+```terminal
+>> conda install -c conda-forge tqdm
+```
