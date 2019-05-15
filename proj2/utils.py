@@ -103,7 +103,7 @@ def copy(param):
 
 def log(string):
     '''This functions prints some log information based on the string passed by argument.'''
-    log_info=False
+    log_info=True
     if log_info:
         print(string)
 
