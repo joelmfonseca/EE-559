@@ -1,12 +1,12 @@
 # EE-559 Deep Learning - Project 1
 
-The first project developed for the Deep Learning course, was about predicting which digit from a 2-channel image was bigger than the other. The goal was to try different architectures: standard, using weight sharing or auxiliary loss. We also implemented an additional architecture where the comparision between the digits is hardcoded and the digit recognition is the only task.
+The first project developed for the Deep Learning course was about predicting which digit from a 2-channel image was bigger than the other. The goal was to try different architectures: standard, using weight sharing or auxiliary loss. We also implemented an additional architecture where the comparision between the digits is hardcoded and the digit recognition is the only task.
 
 The content of this project is composed of different parts:
 
 - the folder `figures` contains all the figures used for the development of this project. 
 
-- the folder `old_material` contains a notebook used for exploration done at the very beggining of the project.
+- the folder `old_material` contains a notebook used for exploration done at the very beginning of the project.
 
 - several `.py` files:
 
