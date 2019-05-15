@@ -1,9 +1,11 @@
 class Optimizer(object):
+    '''Base class for all optimizers.'''
 
     def step(self):
         raise NotImplementedError
 
 class SGD(Optimizer):
+    '''This class implements the SGD.'''
 
     def __init__(self, param, lr):
         self.param = param

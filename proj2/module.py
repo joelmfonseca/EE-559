@@ -4,6 +4,7 @@ torch.set_grad_enabled(False)
 torch.manual_seed(2019)
 
 class Module(object):
+    '''Base class for all modules.'''
 
     def forward(self, *input):
         raise NotImplementedError
@@ -18,6 +19,7 @@ class Module(object):
         return self.__class__.__name__
 
 class Linear(Module):
+    '''This class implements the Linear (Fully Connected) module.'''
 
     def __init__(self, in_features, out_features, activation, bias=True):
         self.activation = activation
@@ -84,6 +86,7 @@ class Linear(Module):
         return list_param
 
 class Sequential(Module):
+    '''This class implements the Sequential module.'''
 
     def __init__(self, modules):
         self.modules = modules

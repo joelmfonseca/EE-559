@@ -4,6 +4,7 @@ torch.set_grad_enabled(False)
 from module import Module
 
 class Tanh(Module):
+    '''This class implements the Tanh activation function.'''
 
     def forward(self, input):
         self.output = input.tanh()
@@ -13,6 +14,7 @@ class Tanh(Module):
         return grad_output * (1 - self.output ** 2)
 
 class ReLU(Module):
+    '''This class implements the ReLU activation function.'''
 
     def forward(self, input):
         self.input = input
@@ -22,6 +24,7 @@ class ReLU(Module):
         return grad_output * self.input.sign().clamp(min=0)
 
 class LeakyReLU(Module):
+    '''This class implements the LeakyReLU activation function.'''
 
     def __init__(self, negative_slope=0.01):
         self.negative_slope = negative_slope
@@ -34,6 +37,7 @@ class LeakyReLU(Module):
         return grad_output * (self.input.sign().clamp(min=0) - self.input.sign().clamp(max=0).mul(self.negative_slope))
 
 class PReLU(Module):
+    '''This class implements the PReLU activation function.'''
 
     def __init__(self, num_parameters=1, init=0.25):
         self.num_parameters = num_parameters

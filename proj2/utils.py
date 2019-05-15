@@ -8,20 +8,24 @@ torch.manual_seed(2019)
 from activation import Tanh, ReLU, LeakyReLU, PReLU
 
 def convert_to_one_hot_labels(input, target):
+    '''This function converts labels to one hot encoding.'''
     tmp = input.new_zeros(target.size(0), target.max() + 1)
     tmp.scatter_(1, target.view(-1, 1), 1.0)
     return tmp
 
 def gen_disc_set(num_samples=1000):
+    '''This function generates the toy dataset.'''
     input = torch.empty(num_samples, 2).uniform_(0,1)
     target = input.sub(0.5).pow(2).sum(1).sub(1 / (2*math.pi)).sign().sub(1).div(-2).long()
     return input, convert_to_one_hot_labels(input, target)
 
 def standardise_input(train_input, valid_input, test_input):
+    '''This function standardises all the inputs.'''
     mean, std = train_input.mean(), train_input.std()
     return train_input.sub(mean).div(std), valid_input.sub(mean).div(std), test_input.sub(mean).div(std)
 
 def build_CV_sets(k_fold, num_samples=1000):
+    '''This function builds all the configuration sets for K-fold Cross Validation.'''
 
     samples_per_set = int(num_samples/k_fold)
     fold_sets = []
@@ -44,6 +48,7 @@ def build_CV_sets(k_fold, num_samples=1000):
     return k_fold_sets
     
 def plot_dataset(input, target):
+    '''This function plots the toy dataset.'''
     fig, ax = plt.subplots(1, 1, figsize=(5,5))
     input = input.numpy()
     target = target.numpy()
@@ -58,6 +63,7 @@ def plot_dataset(input, target):
     plt.show()
 
 def plot_activations():
+    '''This function plots all the activation functions implemented.'''
     fig, ax = plt.subplots(1, 1, figsize=(5,5))
     x_range = np.arange(-3, 3, 0.01)
     x = torch.Tensor(x_range)
@@ -79,6 +85,7 @@ def plot_activations():
     plt.show()
 
 def compute_nb_errors(model, data_input, data_target, mini_batch_size):
+    '''This function computes the number of errors between the model prediction and the groundtruth.'''
     nb_data_errors = 0
     for b in range(0, data_input.size(0), mini_batch_size):
         pred = model.forward(data_input.narrow(0, b, mini_batch_size))
@@ -88,18 +95,21 @@ def compute_nb_errors(model, data_input, data_target, mini_batch_size):
     return nb_data_errors
 
 def copy(param):
+    '''This function makes a deep copy of parameters.'''
     copy_param = []
     for p, grad in param:
         copy_param.append((p.clone(), grad.clone()))
     return copy_param
 
 def log(string):
+    '''This functions prints some log information based on the string passed by argument.'''
     log_info=False
     if log_info:
         print(string)
 
 def train(model, optimizer, lr, criterion,
                 train_input, train_target, valid_input, valid_target, mini_batch_size):
+    '''This function trains the model based on the parameters passed by argument.'''            
 
     patience = 20
     best = {'epoch': 0, 'error': math.inf, 'param': None}
@@ -144,6 +154,7 @@ def train(model, optimizer, lr, criterion,
     return best
 
 def test(model, test_input, test_target, mini_batch_size):
+    '''This function tests the model based on the parameters passed by argument.'''
 
     test_error = compute_nb_errors(model, test_input, test_target, mini_batch_size) / test_input.size(0) * 100
     log('best test error: {:5.2f}%'.format(test_error))
@@ -151,5 +162,4 @@ def test(model, test_input, test_target, mini_batch_size):
     return test_error
 
 if __name__ == '__main__':
-
     plot_activations()

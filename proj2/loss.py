@@ -1,6 +1,7 @@
 from module import Module
 
 class MSELoss(Module):
+    '''This class implements the MSE loss.'''
 
     def forward(self, input, target):
         self.input = input
@@ -11,6 +12,7 @@ class MSELoss(Module):
         return (self.input - self.target).div_(self.input.size(0))
 
 class CrossEntropyLoss(Module):
+    '''This class implements the Cross Entropy loss.'''
 
     def __nll_loss(self, input, target):
         self.p_k = input[target.byte()].view(-1,1)

@@ -10,8 +10,6 @@ The content of this project is composed of different parts:
 
     - **`utils.py`**: contains utilitary functions used throughout the project.
 
-    - **`unit_testing.py`**: contains small unit tests for sanity check.
-
     - **`module.py`**: contains the `Module` class as well as the Linear and Sequential modules.
 
     - **`activation.py`**: contains the Tanh, ReLU, LeakyReLU and PReLU activation functions.
